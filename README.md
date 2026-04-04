@@ -869,12 +869,9 @@ This project is intentionally designed to satisfy the course requirements:
 ## Repository Information
 
 ### Team Members
-- Student 1: `Add name`
-- Student 2: `Add name`
-- Student 3: `Add name`
-
-### Repository
-- GitHub: `Add repository link here`
+- Student 1: Yergali Ussibaliyev
+- Student 2: Temirlan Tazhibayev
+- Student 3: Nursat Tairuly
 
 ---
 

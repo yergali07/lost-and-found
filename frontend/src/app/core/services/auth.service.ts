@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
+import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 
 import { AuthTokens, LoginRequest, RegisterRequest, User } from '../../models/auth.model';
@@ -9,6 +10,7 @@ const API_URL = 'http://127.0.0.1:8000/api/auth';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpClient);
+  private router = inject(Router);
 
   login(data: LoginRequest): Observable<AuthTokens> {
     return this.http.post<AuthTokens>(`${API_URL}/login/`, data).pipe(
@@ -24,7 +26,12 @@ export class AuthService {
     const refresh = localStorage.getItem('refresh_token');
     return this.http
       .post<{ detail: string }>(`${API_URL}/logout/`, { refresh })
-      .pipe(tap(() => this.clearTokens()));
+      .pipe(
+        tap(() => {
+          this.clearTokens();
+          this.router.navigate(['/login']);
+        }),
+      );
   }
 
   getAccessToken(): string | null {

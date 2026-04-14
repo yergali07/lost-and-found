@@ -1,23 +1,87 @@
-<div class="auth-container">
-  <h2>Войти</h2>
+<div class="auth-shell">
+  <div class="auth-card">
+    <aside class="auth-visual" aria-hidden="true">
+      <img class="auth-fog" [src]="fogSrc" alt="" />
+    </aside>
 
-  @if (errorMessage) {
-    <div class="error-message">{{ errorMessage }}</div>
-  }
+    <section class="auth-panel">
+      <div class="logo-badge">
+        <img [src]="logoSrc" alt="KBTU" class="logo-img" />
+      </div>
 
-  <form (ngSubmit)="onSubmit()">
-    <div class="form-group">
-      <label for="username">Username</label>
-      <input id="username" type="text" [(ngModel)]="username" name="username" required />
-    </div>
+      <h1 class="auth-title">{{ mode === 'register' ? 'Register' : 'Login' }}</h1>
 
-    <div class="form-group">
-      <label for="password">Password</label>
-      <input id="password" type="password" [(ngModel)]="password" name="password" required />
-    </div>
+      @if (errorMessage) {
+        <div class="auth-error">{{ errorMessage }}</div>
+      }
 
-    <button type="submit">Войти</button>
-  </form>
+      <form class="auth-form" (ngSubmit)="onSubmit()">
+        <div class="auth-field">
+          <label for="username">Username</label>
+          <input
+            id="username"
+            type="text"
+            [(ngModel)]="username"
+            name="username"
+            autocomplete="username"
+            required
+          />
+        </div>
 
-  <p>Нет аккаунта? <a routerLink="/register">Зарегистрироваться</a></p>
+        @if (mode === 'register') {
+          <div class="auth-field">
+            <label for="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              [(ngModel)]="email"
+              name="email"
+              autocomplete="email"
+              required
+            />
+          </div>
+        }
+
+        <div class="auth-field">
+          <label for="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            [(ngModel)]="password"
+            name="password"
+            [attr.autocomplete]="mode === 'register' ? 'new-password' : 'current-password'"
+            required
+          />
+        </div>
+
+        @if (mode === 'register') {
+          <div class="auth-field">
+            <label for="passwordConfirm">Confirm password</label>
+            <input
+              id="passwordConfirm"
+              type="password"
+              [(ngModel)]="passwordConfirm"
+              name="passwordConfirm"
+              autocomplete="new-password"
+              required
+            />
+          </div>
+        }
+
+        <div class="auth-actions">
+          <button class="auth-button" type="submit">
+            {{ mode === 'register' ? 'Submit' : 'Submit' }}
+          </button>
+        </div>
+      </form>
+
+      <div class="auth-footer">
+        @if (mode === 'login') {
+          <a routerLink="/register">Sign up</a>
+        } @else {
+          <a routerLink="/login">Sign in</a>
+        }
+      </div>
+    </section>
+  </div>
 </div>

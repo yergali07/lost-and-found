@@ -1,0 +1,18 @@
+<div style="max-width: 720px; margin: 40px auto; padding: 0 16px;">
+  <h2>Items (guarded)</h2>
+
+  <p *ngIf="errorMessage" style="color: #b00020;">
+    {{ errorMessage }}
+  </p>
+
+  <div *ngIf="me as u">
+    <p><strong>Logged in as:</strong> {{ u.username }} ({{ u.email }})</p>
+  </div>
+
+  <div style="display: flex; gap: 12px; margin-top: 16px;">
+    <a routerLink="/login">Go to login</a>
+    <a routerLink="/register">Go to register</a>
+    <button type="button" (click)="onLogout()">Logout</button>
+  </div>
+</div>
+

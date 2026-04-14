@@ -1,3 +1,14 @@
+<div style="padding: 1rem; font-family: sans-serif;">
+  <h3>Backend Health Check</h3>
+  @if (healthStatus()) {
+    <p style="color: green;">Backend status: {{ healthStatus() }}</p>
+  } @else if (healthError()) {
+    <p style="color: red;">Backend error: {{ healthError() }}</p>
+  } @else {
+    <p>Checking backend connection...</p>
+  }
+</div>
+
 <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
 <!-- * * * * * * * * * * * The content below * * * * * * * * * * * -->
 <!-- * * * * * * * * * * is only a placeholder * * * * * * * * * * -->

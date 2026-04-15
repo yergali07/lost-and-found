@@ -29,7 +29,7 @@ class Item(models.Model):
     status = models.CharField(max_length=8, choices=Status.choices, default=Status.ACTIVE)
     location = models.CharField(max_length=255)
     date_lost_or_found = models.DateField()
-    image_url = models.URLField(blank=True, default='')
+    image = models.ImageField(upload_to='items/', blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='items')

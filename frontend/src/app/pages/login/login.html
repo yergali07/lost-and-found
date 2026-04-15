@@ -1,9 +1,5 @@
 <div class="auth-shell">
   <div class="auth-card">
-    <aside class="auth-visual" aria-hidden="true">
-      <img class="auth-fog" [src]="fogSrc" alt="" />
-    </aside>
-
     <section class="auth-panel">
       <div class="logo-badge">
         <img [src]="logoSrc" alt="KBTU" class="logo-img" />
@@ -70,7 +66,7 @@
 
         <div class="auth-actions">
           <button class="auth-button" type="submit">
-            {{ mode === 'register' ? 'Submit' : 'Submit' }}
+            {{ mode === 'register' ? 'Register' : 'Login' }}
           </button>
         </div>
       </form>

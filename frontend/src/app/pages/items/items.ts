@@ -1,6 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common';
 
 import { AuthService } from '../../core/services/auth.service';
 import { User } from '../../models/auth.model';
@@ -8,7 +7,7 @@ import { User } from '../../models/auth.model';
 @Component({
   selector: 'app-items',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [RouterLink],
   templateUrl: './items.html',
 })
 export class ItemsComponent implements OnInit {

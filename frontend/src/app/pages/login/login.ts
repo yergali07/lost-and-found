@@ -1,7 +1,7 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, NavigationEnd, Router, RouterLink } from '@angular/router';
-import { filter } from 'rxjs';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 import { AuthService } from '../../core/services/auth.service';
 import { LoginRequest, RegisterRequest } from '../../models/auth.model';
@@ -15,10 +15,11 @@ export type AuthMode = 'login' | 'register';
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private routeDataSub?: Subscription;
 
   mode: AuthMode = 'login';
 
@@ -29,20 +30,17 @@ export class LoginComponent implements OnInit {
   errorMessage = '';
 
   readonly logoSrc = '/kbtu-logo.png';
-  readonly fogSrc = '/kbtu-fog.png';
 
   ngOnInit(): void {
-    const syncMode = (): void => {
-      const m = this.route.snapshot.data['mode'] as AuthMode | undefined;
+    this.routeDataSub = this.route.data.subscribe((data) => {
+      const m = data['mode'] as AuthMode | undefined;
       this.mode = m === 'register' ? 'register' : 'login';
       this.errorMessage = '';
-    };
+    });
+  }
 
-    syncMode();
-    this.route.data.subscribe(() => syncMode());
-    this.router.events
-      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
-      .subscribe(() => syncMode());
+  ngOnDestroy(): void {
+    this.routeDataSub?.unsubscribe();
   }
 
   onSubmit(): void {
@@ -75,7 +73,8 @@ export class LoginComponent implements OnInit {
         this.router.navigate(['/items']);
       },
       error: (err: unknown) => {
-        const detail = (err as { error?: { detail?: string } })?.error?.detail;
+        const e = err as { error?: { detail?: string } };
+        const detail = e?.error?.detail;
         this.errorMessage = detail || 'Login failed. Please try again.';
       },
     });

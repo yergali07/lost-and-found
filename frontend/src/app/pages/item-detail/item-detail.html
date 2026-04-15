@@ -1,0 +1,135 @@
+<div style="max-width: 720px; margin: 40px auto; padding: 0 16px;">
+  <a routerLink="/items" style="display: inline-block; margin-bottom: 16px;">&larr; Back to items</a>
+
+  @if (loading()) {
+    <p>Loading...</p>
+  }
+
+  @if (errorMessage(); as err) {
+    <p style="color: #b00020;">{{ err }}</p>
+  }
+
+  @if (item(); as i) {
+    <div style="border: 1px solid #ddd; border-radius: 8px; padding: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 8px;">
+        <h2 style="margin: 0;">{{ i.title }}</h2>
+        <div style="display: flex; gap: 8px;">
+          <span
+            style="
+              padding: 4px 10px;
+              border-radius: 12px;
+              font-size: 0.85em;
+              font-weight: 500;
+              color: #fff;
+            "
+            [style.background-color]="
+              i.item_type === 'lost' ? '#d32f2f' : '#388e3c'
+            "
+          >
+            {{ i.item_type === 'lost' ? 'Lost' : 'Found' }}
+          </span>
+          <span
+            style="
+              padding: 4px 10px;
+              border-radius: 12px;
+              font-size: 0.85em;
+              font-weight: 500;
+              color: #fff;
+            "
+            [style.background-color]="
+              i.status === 'active'
+                ? '#1976d2'
+                : i.status === 'claimed'
+                  ? '#f57c00'
+                  : '#388e3c'
+            "
+          >
+            {{ i.status | titlecase }}
+          </span>
+        </div>
+      </div>
+
+      @if (i.image) {
+        <img
+          [src]="i.image"
+          [alt]="i.title"
+          style="
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-top: 16px;
+          "
+        />
+      }
+
+      <p style="margin-top: 16px; line-height: 1.6;">{{ i.description }}</p>
+
+      <div
+        style="
+          display: grid;
+          grid-template-columns: auto 1fr;
+          gap: 8px 16px;
+          margin-top: 16px;
+          font-size: 0.95em;
+        "
+      >
+        <strong>Category:</strong>
+        <span>{{ i.category_name }}</span>
+
+        <strong>Location:</strong>
+        <span>{{ i.location }}</span>
+
+        <strong>Date:</strong>
+        <span>{{ i.date_lost_or_found | date: 'longDate' }}</span>
+
+        <strong>Posted by:</strong>
+        <span>{{ i.owner_username }}</span>
+
+        <strong>Created:</strong>
+        <span>{{ i.created_at | date: 'medium' }}</span>
+      </div>
+
+      @if (isOwner()) {
+        <div
+          style="
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid #eee;
+          "
+        >
+          <a
+            [routerLink]="['/edit-item', i.id]"
+            style="
+              padding: 8px 20px;
+              background: #1976d2;
+              color: #fff;
+              text-decoration: none;
+              border-radius: 4px;
+              font-size: 0.95em;
+            "
+          >
+            Edit
+          </a>
+          <button
+            type="button"
+            (click)="onDelete()"
+            style="
+              padding: 8px 20px;
+              background: #d32f2f;
+              color: #fff;
+              border: none;
+              border-radius: 4px;
+              cursor: pointer;
+              font-size: 0.95em;
+            "
+          >
+            Delete
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>

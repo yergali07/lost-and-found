@@ -26,6 +26,10 @@ export class ItemService {
     return this.http.put<Item>(`${API_URL}/items/${id}/`, this.toFormData(data));
   }
 
+  deleteItem(id: number): Observable<void> {
+    return this.http.delete<void>(`${API_URL}/items/${id}/`);
+  }
+
   private toFormData(data: ItemCreateRequest): FormData {
     const fd = new FormData();
     fd.append('title', data.title);

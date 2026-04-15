@@ -5,7 +5,7 @@
         <img [src]="logoSrc" alt="KBTU" class="logo-img" />
       </div>
 
-      <h1 class="auth-title">Login</h1>
+      <h1 class="auth-title">Register</h1>
 
       @if (errorMessage) {
         <div class="auth-error">{{ errorMessage }}</div>
@@ -25,24 +25,48 @@
         </div>
 
         <div class="auth-field">
+          <label for="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            [(ngModel)]="email"
+            name="email"
+            autocomplete="email"
+            required
+          />
+        </div>
+
+        <div class="auth-field">
           <label for="password">Password</label>
           <input
             id="password"
             type="password"
             [(ngModel)]="password"
             name="password"
-            autocomplete="current-password"
+            autocomplete="new-password"
+            required
+          />
+        </div>
+
+        <div class="auth-field">
+          <label for="passwordConfirm">Confirm password</label>
+          <input
+            id="passwordConfirm"
+            type="password"
+            [(ngModel)]="passwordConfirm"
+            name="passwordConfirm"
+            autocomplete="new-password"
             required
           />
         </div>
 
         <div class="auth-actions">
-          <button class="auth-button" type="submit">Login</button>
+          <button class="auth-button" type="submit">Register</button>
         </div>
       </form>
 
       <div class="auth-footer">
-        <a routerLink="/register">Sign up</a>
+        <a routerLink="/login">Sign in</a>
       </div>
     </section>
   </div>

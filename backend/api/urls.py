@@ -10,4 +10,8 @@ urlpatterns = [
     path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('auth/me/', views.MeAPIView.as_view(), name='me'),
     path('health/', views.health_check, name='health_check'),
+    path('categories/', views.CategoryListAPIView.as_view(), name='category-list'),
+    path('items/', views.ItemListCreateAPIView.as_view(), name='item-list-create'),
+    path('items/<int:pk>/', views.ItemDetailAPIView.as_view(), name='item-detail'),
+    path('items/me/', views.MyItemsListAPIView.as_view(), name='my-items'),
 ]

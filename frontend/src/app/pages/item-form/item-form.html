@@ -1,0 +1,105 @@
+<div class="form-shell">
+  <div class="form-card">
+    <section class="form-panel">
+      <a routerLink="/items" class="back-link">&larr; Back to items</a>
+
+      <h1 class="form-title">{{ isEditMode ? 'Edit Item' : 'Create Item' }}</h1>
+
+      @if (errorMessage) {
+        <div class="form-error">{{ errorMessage }}</div>
+      }
+
+      <form class="item-form" (ngSubmit)="onSubmit()">
+        <div class="form-field">
+          <label for="title">Title</label>
+          <input
+            id="title"
+            type="text"
+            [(ngModel)]="title"
+            name="title"
+            required
+            placeholder="What was lost or found?"
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="description">Description</label>
+          <textarea
+            id="description"
+            [(ngModel)]="description"
+            name="description"
+            rows="4"
+            required
+            placeholder="Describe the item in detail"
+          ></textarea>
+        </div>
+
+        <div class="form-field">
+          <label for="location">Location</label>
+          <input
+            id="location"
+            type="text"
+            [(ngModel)]="location"
+            name="location"
+            required
+            placeholder="Where was it lost or found?"
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="category">Category</label>
+          <select id="category" [(ngModel)]="category" name="category" required>
+            <option [ngValue]="null" disabled>Select a category</option>
+            @for (cat of categories; track cat.id) {
+              <option [ngValue]="cat.id">{{ cat.name }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label>Type</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" [(ngModel)]="itemType" name="itemType" value="lost" />
+              Lost
+            </label>
+            <label class="radio-label">
+              <input type="radio" [(ngModel)]="itemType" name="itemType" value="found" />
+              Found
+            </label>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="dateLostOrFound">Date</label>
+          <input
+            id="dateLostOrFound"
+            type="date"
+            [(ngModel)]="dateLostOrFound"
+            name="dateLostOrFound"
+            required
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="image">Image</label>
+          <input
+            id="image"
+            type="file"
+            accept="image/*"
+            (change)="onFileSelected($event)"
+          />
+          @if (imagePreview) {
+            <img [src]="imagePreview" alt="Preview" class="image-preview" />
+          }
+        </div>
+
+        <div class="form-actions">
+          <button class="form-button" type="submit" [disabled]="loading">
+            {{ isEditMode ? 'Save Changes' : 'Create Item' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>

@@ -24,6 +24,9 @@ class ItemSerializer(serializers.ModelSerializer):
         model = Item
         fields = '__all__'
         read_only_fields = ['owner']
+        extra_kwargs = {
+            'image': {'required': False},
+        }
 
 
 class RegisterSerializer(serializers.Serializer):

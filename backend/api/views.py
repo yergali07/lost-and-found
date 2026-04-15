@@ -201,3 +201,25 @@ class MyItemsListAPIView(APIView):
         )
         serializer = ItemSerializer(items, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def mark_resolved_view(request, pk):
+    try:
+        item = Item.objects.get(pk=pk)
+    except Item.DoesNotExist:
+        return Response(
+            {'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND
+        )
+
+    if item.owner != request.user:
+        return Response(
+            {'detail': 'You do not have permission to perform this action.'},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    item.status = Item.Status.RESOLVED
+    item.save(update_fields=['status', 'updated_at'])
+    serializer = ItemSerializer(item, context={'request': request})
+    return Response(serializer.data, status=status.HTTP_200_OK)

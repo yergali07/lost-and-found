@@ -31,6 +31,11 @@ export class ItemDetailComponent implements OnInit {
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
 
+    if (isNaN(id)) {
+      this.router.navigate(['/items']);
+      return;
+    }
+
     this.itemService.getItem(id).subscribe({
       next: (item) => {
         this.item.set(item);

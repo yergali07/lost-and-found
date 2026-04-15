@@ -51,7 +51,7 @@ export class AuthService {
     localStorage.setItem('refresh_token', tokens.refresh);
   }
 
-  private clearTokens(): void {
+  clearTokens(): void {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
   }

@@ -41,8 +41,16 @@ export class ItemService {
     return this.http.put<Item>(`${API_URL}/items/${id}/`, this.toFormData(data));
   }
 
+  getMyItems(): Observable<Item[]> {
+    return this.http.get<Item[]>(`${API_URL}/items/me/`);
+  }
+
   deleteItem(id: number): Observable<void> {
     return this.http.delete<void>(`${API_URL}/items/${id}/`);
+  }
+
+  markResolved(id: number): Observable<Item> {
+    return this.http.post<Item>(`${API_URL}/items/${id}/mark-resolved/`, {});
   }
 
   private toFormData(data: ItemCreateRequest): FormData {

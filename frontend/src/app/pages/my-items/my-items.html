@@ -1,0 +1,67 @@
+<div class="my-items">
+  <header class="my-items__header">
+    <a routerLink="/items" class="my-items__back">&larr; Back to items</a>
+    <h1>My Items</h1>
+  </header>
+
+  @if (errorMessage()) {
+    <p class="my-items__error">{{ errorMessage() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="my-items__status">Loading your items…</p>
+  } @else if (items().length === 0 && !errorMessage()) {
+    <p class="my-items__status">You haven't posted any items yet.</p>
+  } @else {
+    <div class="my-items__grid">
+      @for (item of items(); track item.id) {
+        <app-item-card [item]="item" />
+      }
+    </div>
+  }
+</div>
+
+<style>
+  .my-items {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 24px 16px;
+  }
+
+  .my-items__header {
+    margin-bottom: 24px;
+  }
+
+  .my-items__back {
+    font-size: 14px;
+    color: #1565c0;
+    text-decoration: none;
+  }
+
+  .my-items__back:hover {
+    text-decoration: underline;
+  }
+
+  .my-items__header h1 {
+    margin: 8px 0 0;
+    font-size: 24px;
+  }
+
+  .my-items__error {
+    color: #b00020;
+    margin-bottom: 16px;
+  }
+
+  .my-items__status {
+    text-align: center;
+    color: #666;
+    padding: 40px 0;
+    font-size: 16px;
+  }
+
+  .my-items__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+</style>

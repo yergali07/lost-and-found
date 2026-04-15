@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -6,12 +6,27 @@ import { Item, ItemCreateRequest } from '../../models/item.model';
 
 const API_URL = 'http://127.0.0.1:8000/api';
 
+export interface ItemFilters {
+  search?: string;
+  item_type?: string;
+  category?: string;
+  status?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ItemService {
   private http = inject(HttpClient);
 
-  getItems(): Observable<Item[]> {
-    return this.http.get<Item[]>(`${API_URL}/items/`);
+  getItems(filters?: ItemFilters): Observable<Item[]> {
+    let params = new HttpParams();
+    if (filters) {
+      for (const [key, value] of Object.entries(filters)) {
+        if (value) {
+          params = params.set(key, value);
+        }
+      }
+    }
+    return this.http.get<Item[]>(`${API_URL}/items/`, { params });
   }
 
   getItem(id: number): Observable<Item> {

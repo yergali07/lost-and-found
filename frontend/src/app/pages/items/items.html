@@ -1,19 +1,159 @@
-<div style="max-width: 720px; margin: 40px auto; padding: 0 16px;">
-  <h2>Items (guarded)</h2>
+<div class="items-page">
+  <header class="items-page__header">
+    <h1>Lost & Found</h1>
 
-  @if (errorMessage) {
-    <p style="color: #b00020;">{{ errorMessage }}</p>
+    @if (me(); as u) {
+      <div class="items-page__user">
+        <span>{{ u.username }}</span>
+        <button type="button" (click)="onLogout()">Logout</button>
+      </div>
+    }
+  </header>
+
+  <div class="items-page__toolbar">
+    <input
+      type="text"
+      placeholder="Search by title…"
+      [(ngModel)]="searchQuery"
+      (ngModelChange)="onSearchChange()"
+      class="items-page__search"
+    />
+
+    <div class="items-page__filters">
+      <select [(ngModel)]="filterType" (ngModelChange)="onFilterChange()">
+        <option value="">All types</option>
+        <option value="lost">Lost</option>
+        <option value="found">Found</option>
+      </select>
+
+      <select [(ngModel)]="filterCategory" (ngModelChange)="onFilterChange()">
+        <option value="">All categories</option>
+        @for (cat of categories(); track cat.id) {
+          <option [value]="cat.id">{{ cat.name }}</option>
+        }
+      </select>
+
+      <select [(ngModel)]="filterStatus" (ngModelChange)="onFilterChange()">
+        <option value="">All statuses</option>
+        <option value="active">Active</option>
+        <option value="resolved">Resolved</option>
+      </select>
+    </div>
+
+    <a routerLink="/create-item" class="items-page__create-btn">+ New item</a>
+  </div>
+
+  @if (errorMessage()) {
+    <p class="items-page__error">{{ errorMessage() }}</p>
   }
 
-  @if (me; as u) {
-    <div>
-      <p><strong>Logged in as:</strong> {{ u.username }} ({{ u.email }})</p>
+  @if (loading()) {
+    <p class="items-page__status">Loading items…</p>
+  } @else if (items().length === 0 && !errorMessage()) {
+    <p class="items-page__status">No items found.</p>
+  } @else {
+    <div class="items-page__grid">
+      @for (item of items(); track item.id) {
+        <app-item-card [item]="item" />
+      }
     </div>
   }
-
-  <div style="display: flex; gap: 12px; margin-top: 16px;">
-    <a routerLink="/login">Go to login</a>
-    <a routerLink="/register">Go to register</a>
-    <button type="button" (click)="onLogout()">Logout</button>
-  </div>
 </div>
+
+<style>
+  .items-page {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 24px 16px;
+  }
+
+  .items-page__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .items-page__header h1 {
+    margin: 0;
+    font-size: 24px;
+  }
+
+  .items-page__user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+  }
+
+  .items-page__user button {
+    padding: 6px 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+  }
+
+  .items-page__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .items-page__search {
+    flex: 1;
+    min-width: 200px;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  .items-page__filters {
+    display: flex;
+    gap: 8px;
+  }
+
+  .items-page__filters select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #fff;
+  }
+
+  .items-page__create-btn {
+    padding: 8px 16px;
+    background: #1565c0;
+    color: #fff;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .items-page__create-btn:hover {
+    background: #0d47a1;
+  }
+
+  .items-page__error {
+    color: #b00020;
+    margin-bottom: 16px;
+  }
+
+  .items-page__status {
+    text-align: center;
+    color: #666;
+    padding: 40px 0;
+    font-size: 16px;
+  }
+
+  .items-page__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+</style>

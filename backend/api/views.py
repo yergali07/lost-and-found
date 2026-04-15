@@ -130,11 +130,11 @@ class ItemListCreateAPIView(APIView):
                 Q(title__icontains=search) | Q(description__icontains=search)
             )
 
-        serializer = ItemSerializer(queryset, many=True)
+        serializer = ItemSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        serializer = ItemSerializer(data=request.data)
+        serializer = ItemSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save(owner=request.user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -157,7 +157,7 @@ class ItemDetailAPIView(APIView):
             return Response(
                 {'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND
             )
-        serializer = ItemSerializer(item)
+        serializer = ItemSerializer(item, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, pk):
@@ -166,7 +166,7 @@ class ItemDetailAPIView(APIView):
             return Response(
                 {'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND
             )
-        serializer = ItemSerializer(item, data=request.data)
+        serializer = ItemSerializer(item, data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -177,7 +177,7 @@ class ItemDetailAPIView(APIView):
             return Response(
                 {'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND
             )
-        serializer = ItemSerializer(item, data=request.data, partial=True)
+        serializer = ItemSerializer(item, data=request.data, partial=True, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -199,5 +199,5 @@ class MyItemsListAPIView(APIView):
         items = Item.objects.select_related('category', 'owner').filter(
             owner=request.user
         )
-        serializer = ItemSerializer(items, many=True)
+        serializer = ItemSerializer(items, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)

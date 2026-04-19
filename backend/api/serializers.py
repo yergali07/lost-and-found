@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from .models import Category, Item
+from .models import Category, Item, Claim
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -57,3 +57,13 @@ class RegisterSerializer(serializers.Serializer):
             password=validated_data['password'],
         )
         return user
+
+
+class ClaimSerializer(serializers.ModelSerializer):
+    claimant = serializers.StringRelatedField(source='claimant.username', read_only=True)
+    item = serializers.StringRelatedField(source='item.title', read_only=True)
+
+    class Meta:
+        model = Claim
+        fields = ['id', 'message', 'status', 'created_at', 'claimant', 'item']
+        read_only_fields = ['claimant', 'status', 'created_at']

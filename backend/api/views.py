@@ -8,13 +8,14 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Category, Item
+from .models import Category, Item, Claim
 from .permissions import IsOwnerOrReadOnly
 from .serializers import (
     CategorySerializer,
     ItemSerializer,
     RegisterSerializer,
     UserSerializer,
+    ClaimSerializer,
 )
 
 
@@ -223,3 +224,74 @@ def mark_resolved_view(request, pk):
     item.save(update_fields=['status', 'updated_at'])
     serializer = ItemSerializer(item, context={'request': request})
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ClaimListCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        claims = Claim.objects.select_related('claimant', 'item').all()
+        serializer = ClaimSerializer(claims, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        request_user = request.user
+        item_id = request.data.get('item')
+        
+        try:
+            item = Item.objects.get(pk=item_id)
+        except Item.DoesNotExist:
+            return Response(
+                {'detail': 'Item not found.'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Проверка: пользователь не может подать заявку на свой предмет
+        if item.owner == request_user:
+            return Response(
+                {'detail': 'You cannot claim your own item.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Проверка: повторные pending заявки запрещены
+        if Claim.objects.filter(claimant=request_user, item=item, status='pending').exists():
+            return Response(
+                {'detail': 'You already have a pending claim for this item.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Проверка: заявки только на 'active' предметы
+        if item.status != Item.Status.ACTIVE:
+            return Response(
+                {'detail': 'You can only claim items with status "active".'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = ClaimSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(claimant=request_user, item=item)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MyClaimsListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        claims = Claim.objects.select_related('claimant', 'item').filter(
+            claimant=request.user
+        )
+        serializer = ClaimSerializer(claims, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ItemClaimsListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_items = Item.objects.filter(owner=request.user)
+        claims = Claim.objects.select_related('claimant', 'item').filter(
+            item__in=user_items
+        )
+        serializer = ClaimSerializer(claims, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

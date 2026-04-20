@@ -67,3 +67,8 @@ class ClaimSerializer(serializers.ModelSerializer):
         model = Claim
         fields = ['id', 'message', 'status', 'created_at', 'claimant', 'item']
         read_only_fields = ['claimant', 'status', 'created_at']
+
+        
+class ClaimActionSerializer(serializers.Serializer):
+    """Для валидации действий approve/reject"""
+    pass

@@ -18,4 +18,6 @@ urlpatterns = [
     path('claims/', views.ClaimListCreateAPIView.as_view(), name='claim-list-create'),
     path('my/claims/', views.MyClaimsListView.as_view(), name='my-claims'),
     path('my/item-claims/', views.ItemClaimsListView.as_view(), name='my-item-claims'),
+    path('claims/<int:pk>/approve/', views.approve_claim, name='claim-approve'),
+    path('claims/<int:pk>/reject/', views.reject_claim, name='claim-reject'),
 ]

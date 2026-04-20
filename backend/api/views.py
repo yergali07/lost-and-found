@@ -246,21 +246,21 @@ class ClaimListCreateAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Проверка: пользователь не может подать заявку на свой предмет
+        
         if item.owner == request_user:
             return Response(
                 {'detail': 'You cannot claim your own item.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Проверка: повторные pending заявки запрещены
+        
         if Claim.objects.filter(claimant=request_user, item=item, status='pending').exists():
             return Response(
                 {'detail': 'You already have a pending claim for this item.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Проверка: заявки только на 'active' предметы
+        
         if item.status != Item.Status.ACTIVE:
             return Response(
                 {'detail': 'You can only claim items with status "active".'},
@@ -295,3 +295,61 @@ class ItemClaimsListView(APIView):
         )
         serializer = ClaimSerializer(claims, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def approve_claim(request, pk):
+    """Одобрить заявку (только владелец объявления)"""
+    try:
+        claim = Claim.objects.select_related('item', 'item__owner').get(pk=pk)
+    except Claim.DoesNotExist:
+        return Response(
+            {'detail': 'Claim not found.'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    if claim.item.owner != request.user:
+        return Response(
+            {'detail': 'You do not have permission to perform this action.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    claim.status = 'approved'
+    claim.save(update_fields=['status'])
+
+    Claim.objects.filter(
+        item=claim.item,
+        status='pending'
+    ).exclude(pk=pk).update(status='rejected')
+
+    claim.item.status = Item.Status.CLAIMED
+    claim.item.save(update_fields=['status', 'updated_at'])
+
+    serializer = ClaimSerializer(claim)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def reject_claim(request, pk):
+    """Отклонить заявку (только владелец объявления)"""
+    try:
+        claim = Claim.objects.select_related('item', 'item__owner').get(pk=pk)
+    except Claim.DoesNotExist:
+        return Response(
+            {'detail': 'Claim not found.'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    if claim.item.owner != request.user:
+        return Response(
+            {'detail': 'You do not have permission to perform this action.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    claim.status = 'rejected'
+    claim.save(update_fields=['status'])
+
+    serializer = ClaimSerializer(claim)
+    return Response(serializer.data, status=status.HTTP_200_OK)

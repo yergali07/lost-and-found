@@ -14,7 +14,7 @@
       @for (claim of claims(); track claim.id) {
         <div class="claim-card">
           <div class="claim-card__header">
-            <strong class="claim-card__item">{{ claim.item }}</strong>
+            <strong class="claim-card__item">{{ claim.item_title }}</strong>
 
             @if (claim.status === 'pending') {
               <span class="badge badge--pending">Pending</span>

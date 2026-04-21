@@ -1,7 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 
-import { ClaimService } from '../../core/services/claim.service';
-import { Claim } from '../../models/claim.model';
+import { ClaimService, ClaimResponse } from '../../core/services/claim.service';
 
 @Component({
   selector: 'app-my-claims',
@@ -12,7 +11,7 @@ import { Claim } from '../../models/claim.model';
 export class MyClaimsComponent implements OnInit {
   private claimService = inject(ClaimService);
 
-  claims = signal<Claim[]>([]);
+  claims = signal<ClaimResponse[]>([]);
   loading = signal(false);
   errorMessage = signal('');
 

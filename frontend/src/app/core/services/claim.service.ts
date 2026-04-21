@@ -12,8 +12,11 @@ export interface ClaimResponse {
   message: string;
   status: 'pending' | 'approved' | 'rejected';
   created_at: string;
-  claimant: string;
-  item: string;
+  updated_at: string;
+  claimant: number;
+  claimant_username: string;
+  item: number;
+  item_title: string;
 }
 
 const API_URL = 'http://127.0.0.1:8000/api';
@@ -27,5 +30,17 @@ export class ClaimService {
       item: itemId,
       message,
     });
+  }
+
+  getMyItemClaims(): Observable<ClaimResponse[]> {
+    return this.http.get<ClaimResponse[]>(`${API_URL}/claims/items/`);
+  }
+
+  approveClaim(claimId: number): Observable<ClaimResponse> {
+    return this.http.post<ClaimResponse>(`${API_URL}/claims/${claimId}/approve/`, {});
+  }
+
+  rejectClaim(claimId: number): Observable<ClaimResponse> {
+    return this.http.post<ClaimResponse>(`${API_URL}/claims/${claimId}/reject/`, {});
   }
 }

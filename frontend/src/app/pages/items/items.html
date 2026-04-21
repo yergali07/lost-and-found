@@ -40,6 +40,7 @@
       </select>
     </div>
 
+    <a routerLink="/my-items" class="items-page__secondary-btn">My items</a>
     <a routerLink="/create-item" class="items-page__create-btn">+ New item</a>
   </div>
 
@@ -142,6 +143,22 @@
 
   .items-page__create-btn:hover {
     background: #0d47a1;
+  }
+
+  .items-page__secondary-btn {
+    padding: 8px 16px;
+    border: 1px solid #1565c0;
+    color: #1565c0;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    background: #fff;
+  }
+
+  .items-page__secondary-btn:hover {
+    background: #e3f2fd;
   }
 
   .items-page__error {

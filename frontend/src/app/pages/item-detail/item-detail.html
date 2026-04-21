@@ -130,6 +130,65 @@
           </button>
         </div>
       }
+
+      @if (isLoggedIn() && !isOwner() && i.status === 'active') {
+        <div
+          style="
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid #eee;
+          "
+        >
+          <h3 style="margin: 0 0 16px;">Подать заявку</h3>
+
+          @if (claimSuccess) {
+            <p style="margin: 0 0 12px; color: #388e3c;">{{ claimSuccess }}</p>
+          }
+
+          @if (claimError) {
+            <p style="margin: 0 0 12px; color: #d32f2f;">{{ claimError }}</p>
+          }
+
+          @if (!hasPendingClaim) {
+            <form (ngSubmit)="onSubmitClaim()" style="display: grid; gap: 12px;">
+              <div style="display: grid; gap: 6px;">
+                <label for="claim-message" style="font-weight: 500;">Message</label>
+                <textarea
+                  id="claim-message"
+                  name="claimMessage"
+                  [(ngModel)]="claimMessage"
+                  rows="4"
+                  placeholder="Объясните, почему это ваш предмет"
+                  style="
+                    width: 100%;
+                    padding: 10px 12px;
+                    border: 1px solid #ccc;
+                    border-radius: 6px;
+                    resize: vertical;
+                    font: inherit;
+                  "
+                ></textarea>
+              </div>
+
+              <button
+                type="submit"
+                [disabled]="claimSubmitting || !claimMessage.trim()"
+                style="
+                  padding: 10px 16px;
+                  border: none;
+                  border-radius: 6px;
+                  background: #1976d2;
+                  color: #fff;
+                  font-weight: 600;
+                  cursor: pointer;
+                "
+              >
+                {{ claimSubmitting ? 'Отправка...' : 'Подать заявку' }}
+              </button>
+            </form>
+          }
+        </div>
+      }
     </div>
   }
 </div>

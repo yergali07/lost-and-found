@@ -43,20 +43,26 @@ class Item(models.Model):
 
 
 class Claim(models.Model):
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
-    ]
-    
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        APPROVED = 'approved', 'Approved'
+        REJECTED = 'rejected', 'Rejected'
+
     message = models.TextField()
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     claimant = models.ForeignKey(User, on_delete=models.CASCADE, related_name='claims')
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='claims')
 
     class Meta:
-        unique_together = ('claimant', 'item', 'status')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['claimant', 'item'],
+                condition=models.Q(status='pending'),
+                name='unique_pending_claim_per_user_item',
+            ),
+        ]
 
     def __str__(self):
         return f"Claim {self.id} by {self.claimant.username} for {self.item.title}"

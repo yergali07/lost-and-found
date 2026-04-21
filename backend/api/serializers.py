@@ -60,15 +60,11 @@ class RegisterSerializer(serializers.Serializer):
 
 
 class ClaimSerializer(serializers.ModelSerializer):
-    claimant = serializers.StringRelatedField(source='claimant.username', read_only=True)
-    item = serializers.StringRelatedField(source='item.title', read_only=True)
+    claimant_username = serializers.CharField(source='claimant.username', read_only=True)
+    item_title = serializers.CharField(source='item.title', read_only=True)
 
     class Meta:
         model = Claim
-        fields = ['id', 'message', 'status', 'created_at', 'claimant', 'item']
-        read_only_fields = ['claimant', 'status', 'created_at']
-
-        
-class ClaimActionSerializer(serializers.Serializer):
-    """Для валидации действий approve/reject"""
-    pass
+        fields = ['id', 'message', 'status', 'created_at', 'updated_at',
+                  'claimant', 'claimant_username', 'item', 'item_title']
+        read_only_fields = ['claimant', 'status', 'created_at', 'updated_at']

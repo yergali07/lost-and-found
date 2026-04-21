@@ -23,14 +23,13 @@ from .serializers import (
 @permission_classes([AllowAny])
 def register_view(request):
     serializer = RegisterSerializer(data=request.data)
-    if serializer.is_valid():
-        user = serializer.save()
-        refresh = RefreshToken.for_user(user)
-        return Response({
-            'access': str(refresh.access_token),
-            'refresh': str(refresh),
-        }, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    serializer.is_valid(raise_exception=True)
+    user = serializer.save()
+    refresh = RefreshToken.for_user(user)
+    return Response({
+        'access': str(refresh.access_token),
+        'refresh': str(refresh),
+    }, status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])
@@ -226,55 +225,40 @@ def mark_resolved_view(request, pk):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class ClaimListCreateAPIView(APIView):
+class ClaimCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        claims = Claim.objects.select_related('claimant', 'item').all()
-        serializer = ClaimSerializer(claims, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
     def post(self, request):
-        request_user = request.user
-        item_id = request.data.get('item')
-        
-        try:
-            item = Item.objects.get(pk=item_id)
-        except Item.DoesNotExist:
-            return Response(
-                {'detail': 'Item not found.'}, 
-                status=status.HTTP_404_NOT_FOUND
-            )
+        serializer = ClaimSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        
-        if item.owner == request_user:
+        item = serializer.validated_data['item']
+
+        if item.owner == request.user:
             return Response(
                 {'detail': 'You cannot claim your own item.'},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        
-        if Claim.objects.filter(claimant=request_user, item=item, status='pending').exists():
+        if Claim.objects.filter(
+            claimant=request.user, item=item, status=Claim.Status.PENDING
+        ).exists():
             return Response(
                 {'detail': 'You already have a pending claim for this item.'},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        
         if item.status != Item.Status.ACTIVE:
             return Response(
                 {'detail': 'You can only claim items with status "active".'},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        serializer = ClaimSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(claimant=request_user, item=item)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save(claimant=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class MyClaimsListView(APIView):
+class MyClaimsListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -285,13 +269,12 @@ class MyClaimsListView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class ItemClaimsListView(APIView):
+class MyItemClaimsListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user_items = Item.objects.filter(owner=request.user)
         claims = Claim.objects.select_related('claimant', 'item').filter(
-            item__in=user_items
+            item__owner=request.user
         )
         serializer = ClaimSerializer(claims, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -315,13 +298,13 @@ def approve_claim(request, pk):
             status=status.HTTP_403_FORBIDDEN
         )
 
-    claim.status = 'approved'
-    claim.save(update_fields=['status'])
+    claim.status = Claim.Status.APPROVED
+    claim.save(update_fields=['status', 'updated_at'])
 
     Claim.objects.filter(
         item=claim.item,
-        status='pending'
-    ).exclude(pk=pk).update(status='rejected')
+        status=Claim.Status.PENDING,
+    ).exclude(pk=pk).update(status=Claim.Status.REJECTED)
 
     claim.item.status = Item.Status.CLAIMED
     claim.item.save(update_fields=['status', 'updated_at'])
@@ -348,8 +331,8 @@ def reject_claim(request, pk):
             status=status.HTTP_403_FORBIDDEN
         )
 
-    claim.status = 'rejected'
-    claim.save(update_fields=['status'])
+    claim.status = Claim.Status.REJECTED
+    claim.save(update_fields=['status', 'updated_at'])
 
     serializer = ClaimSerializer(claim)
     return Response(serializer.data, status=status.HTTP_200_OK)

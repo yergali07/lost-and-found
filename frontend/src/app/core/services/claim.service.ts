@@ -51,16 +51,4 @@ export class ClaimService {
   rejectClaim(claimId: number): Observable<ClaimResponse> {
     return this.http.post<ClaimResponse>(`${API_URL}/claims/${claimId}/reject/`, {});
   }
-
-  getMyItemClaims(): Observable<ClaimResponse[]> {
-    return this.http.get<ClaimResponse[]>(`${API_URL}/claims/items/`);
-  }
-
-  approveClaim(claimId: number): Observable<ClaimResponse> {
-    return this.http.post<ClaimResponse>(`${API_URL}/claims/${claimId}/approve/`, {});
-  }
-
-  rejectClaim(claimId: number): Observable<ClaimResponse> {
-    return this.http.post<ClaimResponse>(`${API_URL}/claims/${claimId}/reject/`, {});
-  }
 }

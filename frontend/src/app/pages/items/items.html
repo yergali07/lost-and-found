@@ -1,14 +1,4 @@
 <div class="items-page">
-  <header class="items-page__header">
-    <h1>Lost & Found</h1>
-
-    @if (me(); as u) {
-      <div class="items-page__user">
-        <span>{{ u.username }}</span>
-        <button type="button" (click)="onLogout()">Logout</button>
-      </div>
-    }
-  </header>
 
   <div class="items-page__toolbar">
     <input
@@ -66,25 +56,6 @@
     max-width: 960px;
     margin: 0 auto;
     padding: 24px 16px;
-  }
-
-  .items-page__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-  }
-
-  .items-page__header h1 {
-    margin: 0;
-    font-size: 24px;
-  }
-
-  .items-page__user {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 14px;
   }
 
   .items-page__user button {

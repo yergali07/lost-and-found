@@ -1,0 +1,33 @@
+<div class="my-claims-page">
+  <h1>My Claims</h1>
+
+  @if (errorMessage()) {
+    <p class="error">{{ errorMessage() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="status">Loading...</p>
+  } @else if (claims().length === 0 && !errorMessage()) {
+    <p class="status">No claims yet.</p>
+  } @else {
+    <div class="claims-list">
+      @for (claim of claims(); track claim.id) {
+        <div class="claim-card">
+          <div class="claim-card__header">
+            <strong class="claim-card__item">{{ claim.item_title }}</strong>
+
+            @if (claim.status === 'pending') {
+              <span class="badge badge--pending">Pending</span>
+            } @else if (claim.status === 'approved') {
+              <span class="badge badge--approved">Approved</span>
+            } @else if (claim.status === 'rejected') {
+              <span class="badge badge--rejected">Rejected</span>
+            }
+          </div>
+
+          <p class="claim-card__message">{{ claim.message }}</p>
+        </div>
+      }
+    </div>
+  }
+</div>

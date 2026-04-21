@@ -1,0 +1,24 @@
+@if (showNavbar()) {
+  <nav class="navbar">
+    <div class="navbar__container">
+      <a routerLink="/items" class="navbar__brand">Lost &amp; Found</a>
+
+      <div class="navbar__links">
+        <a routerLink="/items" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Items</a>
+        <a routerLink="/items/me" routerLinkActive="active">My Items</a>
+        <a routerLink="/my-claims" routerLinkActive="active">My Claims</a>
+      </div>
+
+      <div class="navbar__auth">
+        @if (isLoggedIn()) {
+          @if (me(); as u) {
+            <span class="navbar__username">{{ u.username }}</span>
+          }
+          <button type="button" class="navbar__button" (click)="onLogout()">Logout</button>
+        } @else if (showLoginButton()) {
+          <a routerLink="/login" class="navbar__button navbar__button--link">Login</a>
+        }
+      </div>
+    </div>
+  </nav>
+}

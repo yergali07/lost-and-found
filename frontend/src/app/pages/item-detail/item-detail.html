@@ -139,7 +139,7 @@
             border-top: 1px solid #eee;
           "
         >
-          <h3 style="margin: 0 0 16px;">Подать заявку</h3>
+          <h3 style="margin: 0 0 16px;">Submit claim</h3>
 
           @if (claimSuccess) {
             <p style="margin: 0 0 12px; color: #388e3c;">{{ claimSuccess }}</p>
@@ -158,7 +158,7 @@
                   name="claimMessage"
                   [(ngModel)]="claimMessage"
                   rows="4"
-                  placeholder="Объясните, почему это ваш предмет"
+                  placeholder="Explain why this item belongs to you"
                   style="
                     width: 100%;
                     padding: 10px 12px;
@@ -183,7 +183,7 @@
                   cursor: pointer;
                 "
               >
-                {{ claimSubmitting ? 'Отправка...' : 'Подать заявку' }}
+                {{ claimSubmitting ? 'Submitting...' : 'Submit claim' }}
               </button>
             </form>
           }

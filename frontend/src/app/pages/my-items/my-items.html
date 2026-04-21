@@ -41,11 +41,11 @@
                 (click)="onMarkResolved(item.id)"
                 [disabled]="isResolveBusy(item.id)"
               >
-                {{ isResolveBusy(item.id) ? 'Saving...' : 'Решено' }}
+                {{ isResolveBusy(item.id) ? 'Saving...' : 'Resolved' }}
               </button>
             }
             <button type="button" (click)="toggleClaims(item.id)">
-              {{ isExpanded(item.id) ? 'Скрыть заявки' : 'Показать заявки' }}
+              {{ isExpanded(item.id) ? 'Hide claims' : 'Show claims' }}
               ({{ getClaimsForItem(item.id).length }})
             </button>
           </div>
@@ -72,14 +72,14 @@
                             (click)="onApprove(claim.id)"
                             [disabled]="isClaimBusy(claim.id)"
                           >
-                            Одобрить
+                            Approve
                           </button>
                           <button
                             type="button"
                             (click)="onReject(claim.id)"
                             [disabled]="isClaimBusy(claim.id)"
                           >
-                            Отклонить
+                            Reject
                           </button>
                         </div>
                       }

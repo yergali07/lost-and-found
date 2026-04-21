@@ -4,6 +4,10 @@
     <h1>My Items</h1>
   </header>
 
+  @if (actionMessage()) {
+    <p class="my-items__message">{{ actionMessage() }}</p>
+  }
+
   @if (errorMessage()) {
     <p class="my-items__error">{{ errorMessage() }}</p>
   }
@@ -13,9 +17,79 @@
   } @else if (items().length === 0 && !errorMessage()) {
     <p class="my-items__status">You haven't posted any items yet.</p>
   } @else {
-    <div class="my-items__grid">
+    <div class="my-items__list">
       @for (item of items(); track item.id) {
-        <app-item-card [item]="item" />
+        <article class="my-item-card">
+          <div class="my-item-card__head">
+            <h2>{{ item.title }}</h2>
+            <span class="badge" [class.badge--active]="item.status === 'active'">
+              {{ item.status | titlecase }}
+            </span>
+          </div>
+
+          <p class="my-item-card__meta">
+            {{ item.item_type | titlecase }} · {{ item.category_name }} · {{ item.created_at | date: 'medium' }}
+          </p>
+
+          <p class="my-item-card__description">{{ item.description }}</p>
+
+          <div class="my-item-card__actions">
+            <a [routerLink]="['/items', item.id]">Open</a>
+            @if (item.status !== 'resolved') {
+              <button
+                type="button"
+                (click)="onMarkResolved(item.id)"
+                [disabled]="isResolveBusy(item.id)"
+              >
+                {{ isResolveBusy(item.id) ? 'Saving...' : 'Решено' }}
+              </button>
+            }
+            <button type="button" (click)="toggleClaims(item.id)">
+              {{ isExpanded(item.id) ? 'Скрыть заявки' : 'Показать заявки' }}
+              ({{ getClaimsForItem(item.id).length }})
+            </button>
+          </div>
+
+          @if (isExpanded(item.id)) {
+            <section class="claims-box">
+              @if (claimsLoading()) {
+                <p class="my-items__status">Loading claims…</p>
+              } @else if (getClaimsForItem(item.id).length === 0) {
+                <p class="claims-box__empty">No claims yet.</p>
+              } @else {
+                @for (claim of getClaimsForItem(item.id); track claim.id) {
+                  <div class="claim-row">
+                    <div>
+                      <strong>{{ claim.claimant_username }}</strong>
+                      <p>{{ claim.message }}</p>
+                    </div>
+                    <div class="claim-row__right">
+                      <span class="claim-status">{{ claim.status | titlecase }}</span>
+                      @if (claim.status === 'pending') {
+                        <div class="claim-row__actions">
+                          <button
+                            type="button"
+                            (click)="onApprove(claim.id)"
+                            [disabled]="isClaimBusy(claim.id)"
+                          >
+                            Одобрить
+                          </button>
+                          <button
+                            type="button"
+                            (click)="onReject(claim.id)"
+                            [disabled]="isClaimBusy(claim.id)"
+                          >
+                            Отклонить
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              }
+            </section>
+          }
+        </article>
       }
     </div>
   }
@@ -52,6 +126,11 @@
     margin-bottom: 16px;
   }
 
+  .my-items__message {
+    color: #1b5e20;
+    margin-bottom: 16px;
+  }
+
   .my-items__status {
     text-align: center;
     color: #666;
@@ -59,9 +138,129 @@
     font-size: 16px;
   }
 
-  .my-items__grid {
+  .my-items__list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 16px;
+  }
+
+  .my-item-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 16px;
+    background: #fff;
+  }
+
+  .my-item-card__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .my-item-card__head h2 {
+    margin: 0;
+    font-size: 18px;
+  }
+
+  .badge {
+    background: #6d6d6d;
+    color: #fff;
+    border-radius: 12px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .badge--active {
+    background: #1976d2;
+  }
+
+  .my-item-card__meta {
+    margin: 8px 0 4px;
+    color: #666;
+    font-size: 13px;
+  }
+
+  .my-item-card__description {
+    margin: 8px 0 12px;
+  }
+
+  .my-item-card__actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .my-item-card__actions button,
+  .my-item-card__actions a {
+    border: 1px solid #1976d2;
+    background: #1976d2;
+    color: #fff;
+    border-radius: 6px;
+    padding: 6px 10px;
+    text-decoration: none;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .claims-box {
+    margin-top: 12px;
+    border-top: 1px solid #eee;
+    padding-top: 12px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .claims-box__empty {
+    margin: 0;
+    color: #777;
+  }
+
+  .claim-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    padding: 10px;
+  }
+
+  .claim-row p {
+    margin: 4px 0 0;
+  }
+
+  .claim-row__right {
+    text-align: right;
+    display: grid;
+    gap: 6px;
+  }
+
+  .claim-status {
+    font-size: 13px;
+    font-weight: 600;
+    color: #444;
+  }
+
+  .claim-row__actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .claim-row__actions button {
+    border: none;
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  .claim-row__actions button:first-child {
+    background: #2e7d32;
+  }
+
+  .claim-row__actions button:last-child {
+    background: #d32f2f;
   }
 </style>

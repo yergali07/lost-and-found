@@ -90,7 +90,7 @@ export class ItemDetailComponent implements OnInit {
         next: () => {
           this.hasPendingClaim = true;
           this.claimMessage = '';
-          this.claimSuccess = 'Заявка успешно подана!';
+          this.claimSuccess = 'Claim submitted successfully!';
         },
         error: (err: unknown) => {
           this.claimError = this.formatClaimError(err);
@@ -115,7 +115,7 @@ export class ItemDetailComponent implements OnInit {
   private formatClaimError(err: unknown): string {
     const timeoutError = err as { name?: string };
     if (timeoutError.name === 'TimeoutError') {
-      return 'Сервер долго не отвечает. Попробуйте еще раз.';
+      return 'The server is taking too long to respond. Please try again.';
     }
 
     const error = err as { error?: { detail?: string; [key: string]: unknown } };
@@ -124,7 +124,7 @@ export class ItemDetailComponent implements OnInit {
     if (detail) {
       if (detail === 'You already have a pending claim for this item.') {
         this.hasPendingClaim = true;
-        this.claimSuccess = 'Заявка уже отправлена и ожидает рассмотрения.';
+        this.claimSuccess = 'A claim has already been submitted and is pending review.';
         return '';
       }
 

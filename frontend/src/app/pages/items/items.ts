@@ -2,10 +2,8 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
-import { AuthService } from '../../core/services/auth.service';
 import { ItemService } from '../../core/services/item.service';
 import { CategoryService } from '../../core/services/category.service';
-import { User } from '../../models/auth.model';
 import { Category, Item } from '../../models/item.model';
 import { ItemCardComponent } from '../../shared/item-card/item-card';
 
@@ -16,12 +14,9 @@ import { ItemCardComponent } from '../../shared/item-card/item-card';
   templateUrl: './items.html',
 })
 export class ItemsComponent implements OnInit {
-  private authService = inject(AuthService);
   private itemService = inject(ItemService);
   private categoryService = inject(CategoryService);
-  private router = inject(Router);
 
-  me = signal<User | null>(null);
   items = signal<Item[]>([]);
   categories = signal<Category[]>([]);
 
@@ -34,13 +29,6 @@ export class ItemsComponent implements OnInit {
   filterStatus = '';
 
   ngOnInit(): void {
-    this.authService.getMe().subscribe({
-      next: (me) => this.me.set(me),
-      error: (err) => {
-        this.errorMessage.set(err?.error?.detail || 'Failed to load user info.');
-      },
-    });
-
     this.categoryService.getCategories().subscribe({
       next: (categories) => this.categories.set(categories),
     });
@@ -78,11 +66,4 @@ export class ItemsComponent implements OnInit {
   onFilterChange(): void {
     this.loadItems();
   }
-
-  onLogout(): void {
-    this.authService.logout().subscribe({
-      complete: () => this.router.navigate(['/login']),
-      error: () => this.router.navigate(['/login']),
-    });
   }
-}

@@ -20,4 +20,6 @@ urlpatterns = [
     path('claims/items/', views.MyItemClaimsListAPIView.as_view(), name='my-item-claims'),
     path('claims/<int:pk>/approve/', views.approve_claim, name='claim-approve'),
     path('claims/<int:pk>/reject/', views.reject_claim, name='claim-reject'),
+    path('my/claims/', views.MyClaimsListAPIView.as_view(), name='my-claims-alias'),
+    path('my/item-claims/', views.MyItemClaimsListAPIView.as_view(), name='my-item-claims-alias'),
 ]

@@ -583,6 +583,276 @@
           }
         }
       ]
+    },
+    {
+      "name": "Claims",
+      "item": [
+        {
+          "name": "Submit claim (success)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json();",
+                  "pm.test('has message', function () { pm.expect(data.message).to.be.a('string'); });",
+                  "pm.test('status is pending', function () { pm.expect(data.status).to.eql('pending'); });",
+                  "pm.collectionVariables.set('claimId', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access2}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"item\": {{itemId}},\n  \"message\": \"This is my item. I can describe it in detail.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/claims/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "claims", ""]
+            }
+          }
+        },
+        {
+          "name": "Submit claim (error - own item)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });",
+                  "pm.test('returns detail', function () { pm.expect(pm.response.json()).to.have.property('detail'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"item\": {{itemId}},\n  \"message\": \"I am the owner, so this should fail.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/claims/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "claims", ""]
+            }
+          }
+        },
+        {
+          "name": "Submit claim (error - pending already exists)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });",
+                  "pm.test('returns detail', function () { pm.expect(pm.response.json()).to.have.property('detail'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access2}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"item\": {{itemId}},\n  \"message\": \"Trying to submit a second claim for the same item.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/claims/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "claims", ""]
+            }
+          }
+        },
+        {
+          "name": "Get my claims",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('returns array', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access2}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/claims/me/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "claims", "me", ""]
+            }
+          }
+        },
+        {
+          "name": "Get my item claims",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('returns array', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/claims/items/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "claims", "items", ""]
+            }
+          }
+        },
+        {
+          "name": "Approve claim",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('status is approved', function () { pm.expect(pm.response.json().status).to.eql('approved'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/claims/{{claimId}}/approve/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "claims", "{{claimId}}", "approve", ""]
+            }
+          }
+        },
+        {
+          "name": "Reject claim",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const suffix = Date.now();",
+                  "const itemTitle = `Temp item ${suffix}`;",
+                  "pm.sendRequest({",
+                  "  url: pm.collectionVariables.get('baseUrl') + '/api/items/',",
+                  "  method: 'POST',",
+                  "  header: {",
+                  "    'Content-Type': 'application/json',",
+                  "    'Authorization': 'Bearer ' + pm.collectionVariables.get('access')",
+                  "  },",
+                  "  body: {",
+                  "    mode: 'raw',",
+                  "    raw: JSON.stringify({",
+                  "      title: itemTitle,",
+                  "      description: 'Temporary item for reject claim test',",
+                  "      item_type: 'found',",
+                  "      location: 'Test location',",
+                  "      date_lost_or_found: '2026-04-10',",
+                  "      category: Number(pm.collectionVariables.get('categoryId'))",
+                  "    })",
+                  "  }",
+                  "}, function (err, res) {",
+                  "  pm.collectionVariables.set('rejectItemId', res.json().id);",
+                  "  pm.sendRequest({",
+                  "    url: pm.collectionVariables.get('baseUrl') + '/api/claims/',",
+                  "    method: 'POST',",
+                  "    header: {",
+                  "      'Content-Type': 'application/json',",
+                  "      'Authorization': 'Bearer ' + pm.collectionVariables.get('access2')",
+                  "    },",
+                  "    body: {",
+                  "      mode: 'raw',",
+                  "      raw: JSON.stringify({",
+                  "        item: pm.collectionVariables.get('rejectItemId'),",
+                  "        message: 'Please reject this claim after the test.'",
+                  "      })",
+                  "    }",
+                  "  }, function (err2, res2) {",
+                  "    pm.collectionVariables.set('rejectClaimId', res2.json().id);",
+                  "  });",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('status is rejected', function () { pm.expect(pm.response.json().status).to.eql('rejected'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/claims/{{rejectClaimId}}/reject/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "claims", "{{rejectClaimId}}", "reject", ""]
+            }
+          }
+        },
+        {
+          "name": "Mark resolved",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('status is resolved', function () { pm.expect(pm.response.json().status).to.eql('resolved'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/items/{{itemId}}/mark-resolved/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "items", "{{itemId}}", "mark-resolved", ""]
+            }
+          }
+        }
+      ]
     }
   ]
 }

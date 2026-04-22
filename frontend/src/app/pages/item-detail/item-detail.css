@@ -109,6 +109,15 @@
   font-size: 0.95em;
   border: none;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.detail-action-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .detail-action-button--danger {
@@ -166,6 +175,10 @@
   color: #fff;
   font-weight: 600;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .detail-claim__submit:disabled {

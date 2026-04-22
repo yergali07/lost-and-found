@@ -62,6 +62,8 @@ class RegisterSerializer(serializers.Serializer):
 class ClaimSerializer(serializers.ModelSerializer):
     claimant_username = serializers.CharField(source='claimant.username', read_only=True)
     item_title = serializers.CharField(source='item.title', read_only=True)
+    item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
+    claimant = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Claim

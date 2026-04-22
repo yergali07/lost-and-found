@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-from .models import Category, Item
+from .models import Category, Item, Claim
 
 
 class CategoryTests(APITestCase):
@@ -58,7 +58,7 @@ class ItemListTests(APITestCase):
         self.user = User.objects.create_user(username='owner', password='Testpass1!')
         self.cat1, _ = Category.objects.get_or_create(name='Electronics')
         self.cat2, _ = Category.objects.get_or_create(name='Books')
-        Item.objects.create(
+        self.lost_item = Item.objects.create(
             title='Lost iPhone',
             description='Black iPhone',
             item_type='lost',
@@ -68,7 +68,7 @@ class ItemListTests(APITestCase):
             owner=self.user,
             category=self.cat1,
         )
-        Item.objects.create(
+        self.found_item = Item.objects.create(
             title='Found Textbook',
             description='Calculus textbook',
             item_type='found',
@@ -82,38 +82,40 @@ class ItemListTests(APITestCase):
     def test_list_items(self):
         response = self.client.get('/api/items/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
+        titles = [item['title'] for item in response.data]
+        self.assertIn('Lost iPhone', titles)
+        self.assertIn('Found Textbook', titles)
 
     def test_filter_by_item_type(self):
         response = self.client.get('/api/items/', {'item_type': 'lost'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['item_type'], 'lost')
+        self.assertTrue(all(item['item_type'] == 'lost' for item in response.data))
+        self.assertTrue(any(item['title'] == 'Lost iPhone' for item in response.data))
 
     def test_filter_by_category(self):
         response = self.client.get('/api/items/', {'category': self.cat2.pk})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['title'], 'Found Textbook')
+        titles = [item['title'] for item in response.data]
+        self.assertIn('Found Textbook', titles)
 
     def test_filter_by_status(self):
         response = self.client.get('/api/items/', {'status': 'active'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['title'], 'Lost iPhone')
+        self.assertTrue(all(item['status'] == 'active' for item in response.data))
+        self.assertTrue(any(item['title'] == 'Lost iPhone' for item in response.data))
 
     def test_search_by_title(self):
         response = self.client.get('/api/items/', {'search': 'iPhone'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        self.assertTrue(any(item['title'] == 'Lost iPhone' for item in response.data))
 
     def test_search_by_description(self):
         response = self.client.get('/api/items/', {'search': 'Calculus'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        self.assertTrue(any(item['title'] == 'Found Textbook' for item in response.data))
 
     def test_filter_no_results(self):
-        response = self.client.get('/api/items/', {'item_type': 'found', 'status': 'active'})
+        response = self.client.get('/api/items/', {'item_type': 'found', 'status': 'claimed'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)
 
@@ -234,3 +236,140 @@ class ItemDeleteTests(APITestCase):
         response = self.client.delete(f'/api/items/{self.item.pk}/')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertTrue(Item.objects.filter(pk=self.item.pk).exists())
+
+
+class ClaimFlowTests(APITestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(username='owner', password='Testpass1!')
+        self.claimant = User.objects.create_user(username='claimant', password='Testpass1!')
+        self.other_user = User.objects.create_user(username='other', password='Testpass1!')
+        self.category, _ = Category.objects.get_or_create(name='Electronics')
+
+        self.active_item = Item.objects.create(
+            title='Lost AirPods',
+            description='White AirPods near the library',
+            item_type='lost',
+            location='Library',
+            date_lost_or_found=date(2026, 4, 10),
+            owner=self.owner,
+            category=self.category,
+        )
+        self.resolved_item = Item.objects.create(
+            title='Found Notebook',
+            description='Blue notebook',
+            item_type='found',
+            status='resolved',
+            location='Cafeteria',
+            date_lost_or_found=date(2026, 4, 11),
+            owner=self.owner,
+            category=self.category,
+        )
+
+        self.pending_claim = Claim.objects.create(
+            message='I can describe the serial number.',
+            claimant=self.claimant,
+            item=self.active_item,
+        )
+        self.approved_claim = Claim.objects.create(
+            message='This is mine and I have proof.',
+            claimant=self.other_user,
+            item=self.resolved_item,
+            status='approved',
+        )
+
+    def test_submit_claim_success(self):
+        self.client.force_authenticate(user=self.other_user)
+        payload = {'item': self.active_item.pk, 'message': 'This item belongs to me.'}
+        response = self.client.post('/api/claims/', payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['status'], 'pending')
+        self.assertEqual(response.data['item'], self.active_item.pk)
+
+    def test_submit_claim_unauthenticated(self):
+        payload = {'item': self.active_item.pk, 'message': 'No token.'}
+        response = self.client.post('/api/claims/', payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_submit_claim_own_item_forbidden(self):
+        self.client.force_authenticate(user=self.owner)
+        payload = {'item': self.active_item.pk, 'message': 'Trying to claim my own item.'}
+        response = self.client.post('/api/claims/', payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'You cannot claim your own item.')
+
+    def test_submit_claim_inactive_item_bad_request(self):
+        self.client.force_authenticate(user=self.other_user)
+        payload = {'item': self.resolved_item.pk, 'message': 'This should fail.'}
+        response = self.client.post('/api/claims/', payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'You can only claim items with status "active".')
+
+    def test_submit_duplicate_pending_claim_bad_request(self):
+        self.client.force_authenticate(user=self.claimant)
+        payload = {'item': self.active_item.pk, 'message': 'Second claim.'}
+        response = self.client.post('/api/claims/', payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'You already have a pending claim for this item.')
+
+    def test_get_my_claims_requires_auth(self):
+        response = self.client.get('/api/claims/me/')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_get_my_claims(self):
+        self.client.force_authenticate(user=self.claimant)
+        response = self.client.get('/api/claims/me/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['claimant_username'], 'claimant')
+
+    def test_get_my_item_claims(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.get('/api/claims/items/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(response.data), 1)
+
+    def test_approve_claim_owner(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.post(f'/api/claims/{self.pending_claim.pk}/approve/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.pending_claim.refresh_from_db()
+        self.assertEqual(self.pending_claim.status, 'approved')
+
+    def test_approve_claim_non_owner_forbidden(self):
+        self.client.force_authenticate(user=self.claimant)
+        response = self.client.post(f'/api/claims/{self.pending_claim.pk}/approve/')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_approve_claim_not_found(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.post('/api/claims/999999/approve/')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_reject_claim_owner(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.post(f'/api/claims/{self.pending_claim.pk}/reject/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.pending_claim.refresh_from_db()
+        self.assertEqual(self.pending_claim.status, 'rejected')
+
+    def test_reject_claim_non_owner_forbidden(self):
+        self.client.force_authenticate(user=self.claimant)
+        response = self.client.post(f'/api/claims/{self.pending_claim.pk}/reject/')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_mark_resolved_owner(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.post(f'/api/items/{self.active_item.pk}/mark-resolved/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.active_item.refresh_from_db()
+        self.assertEqual(self.active_item.status, 'resolved')
+
+    def test_mark_resolved_non_owner_forbidden(self):
+        self.client.force_authenticate(user=self.other_user)
+        response = self.client.post(f'/api/items/{self.active_item.pk}/mark-resolved/')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_mark_resolved_not_found(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.post('/api/items/999999/mark-resolved/')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

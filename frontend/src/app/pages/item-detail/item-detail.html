@@ -1,194 +1,364 @@
-<div style="max-width: 720px; margin: 40px auto; padding: 0 16px;">
-  <a routerLink="/items" style="display: inline-block; margin-bottom: 16px;">&larr; Back to items</a>
+<div class="item-detail">
+  <div class="item-detail__container">
+    <a routerLink="/items" class="item-detail__back">&larr; Back to items</a>
 
-  @if (loading()) {
-    <p>Loading...</p>
-  }
+    @if (loading()) {
+      <p class="item-detail__status">Loading...</p>
+    }
 
-  @if (errorMessage(); as err) {
-    <p style="color: #b00020;">{{ err }}</p>
-  }
+    @if (errorMessage(); as err) {
+      <p class="item-detail__error">{{ err }}</p>
+    }
 
-  @if (item(); as i) {
-    <div style="border: 1px solid #ddd; border-radius: 8px; padding: 24px;">
-      <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 8px;">
-        <h2 style="margin: 0;">{{ i.title }}</h2>
-        <div style="display: flex; gap: 8px;">
-          <span
-            style="
-              padding: 4px 10px;
-              border-radius: 12px;
-              font-size: 0.85em;
-              font-weight: 500;
-              color: #fff;
-            "
-            [style.background-color]="
-              i.item_type === 'lost' ? '#d32f2f' : '#388e3c'
-            "
-          >
-            {{ i.item_type === 'lost' ? 'Lost' : 'Found' }}
-          </span>
-          <span
-            style="
-              padding: 4px 10px;
-              border-radius: 12px;
-              font-size: 0.85em;
-              font-weight: 500;
-              color: #fff;
-            "
-            [style.background-color]="
-              i.status === 'active'
-                ? '#1976d2'
-                : i.status === 'claimed'
-                  ? '#f57c00'
-                  : '#388e3c'
-            "
-          >
-            {{ i.status | titlecase }}
-          </span>
+    @if (item(); as i) {
+      <div class="item-detail__card">
+        <!-- Header with title and badges -->
+        <div class="item-detail__header">
+          <h2 class="item-detail__title">{{ i.title }}</h2>
+          <div class="item-detail__badges">
+            <span class="badge" [class.badge--lost]="i.item_type === 'lost'"
+                  [class.badge--found]="i.item_type === 'found'">
+              {{ i.item_type === 'lost' ? 'Lost' : 'Found' }}
+            </span>
+            <span class="badge" [class.badge--active]="i.status === 'active'"
+                  [class.badge--claimed]="i.status === 'claimed'"
+                  [class.badge--resolved]="i.status === 'resolved'">
+              {{ i.status | titlecase }}
+            </span>
+          </div>
         </div>
+
+        <!-- Image -->
+        @if (i.image) {
+          <img
+            [src]="i.image"
+            [alt]="i.title"
+            class="item-detail__image"
+          />
+        }
+
+        <!-- Description -->
+        <p class="item-detail__description">{{ i.description }}</p>
+
+        <!-- Info grid -->
+        <div class="item-detail__info">
+          <div class="info-row">
+            <strong class="info-row__label">Category:</strong>
+            <span class="info-row__value">{{ i.category_name }}</span>
+          </div>
+
+          <div class="info-row">
+            <strong class="info-row__label">Location:</strong>
+            <span class="info-row__value">{{ i.location }}</span>
+          </div>
+
+          <div class="info-row">
+            <strong class="info-row__label">Date:</strong>
+            <span class="info-row__value">{{ i.date_lost_or_found | date: 'longDate' }}</span>
+          </div>
+
+          <div class="info-row">
+            <strong class="info-row__label">Posted by:</strong>
+            <span class="info-row__value">{{ i.owner_username }}</span>
+          </div>
+
+          <div class="info-row">
+            <strong class="info-row__label">Created:</strong>
+            <span class="info-row__value">{{ i.created_at | date: 'medium' }}</span>
+          </div>
+        </div>
+
+        <!-- Owner actions -->
+        @if (isOwner()) {
+          <div class="item-detail__actions">
+            <a
+              [routerLink]="['/edit-item', i.id]"
+              class="btn btn-primary"
+            >
+              ✏️ Edit
+            </a>
+            <button
+              type="button"
+              (click)="onDelete()"
+              class="btn btn-delete"
+            >
+              🗑️ Delete
+            </button>
+          </div>
+        }
+
+        <!-- Claim section for non-owners -->
+        @if (isLoggedIn() && !isOwner() && i.status === 'active') {
+          <section class="item-detail__claims-section">
+            <h3 class="item-detail__claims-title">Submit claim</h3>
+
+            @if (claimSuccess) {
+              <p class="item-detail__claim-success">{{ claimSuccess }}</p>
+            }
+
+            @if (claimError) {
+              <p class="item-detail__claim-error">{{ claimError }}</p>
+            }
+
+            @if (!hasPendingClaim) {
+              <form (ngSubmit)="onSubmitClaim()" class="item-detail__claim-form">
+                <div class="form-field">
+                  <label for="claim-message">Message</label>
+                  <textarea
+                    id="claim-message"
+                    name="claimMessage"
+                    [(ngModel)]="claimMessage"
+                    rows="4"
+                    placeholder="Explain why this item belongs to you"
+                  ></textarea>
+                </div>
+
+                <button
+                  type="submit"
+                  [disabled]="claimSubmitting || !claimMessage.trim()"
+                  class="btn btn-primary"
+                >
+                  {{ claimSubmitting ? 'Submitting...' : 'Submit claim' }}
+                </button>
+              </form>
+            }
+          </section>
+        }
       </div>
-
-      @if (i.image) {
-        <img
-          [src]="i.image"
-          [alt]="i.title"
-          style="
-            width: 100%;
-            max-height: 400px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-top: 16px;
-          "
-        />
-      }
-
-      <p style="margin-top: 16px; line-height: 1.6;">{{ i.description }}</p>
-
-      <div
-        style="
-          display: grid;
-          grid-template-columns: auto 1fr;
-          gap: 8px 16px;
-          margin-top: 16px;
-          font-size: 0.95em;
-        "
-      >
-        <strong>Category:</strong>
-        <span>{{ i.category_name }}</span>
-
-        <strong>Location:</strong>
-        <span>{{ i.location }}</span>
-
-        <strong>Date:</strong>
-        <span>{{ i.date_lost_or_found | date: 'longDate' }}</span>
-
-        <strong>Posted by:</strong>
-        <span>{{ i.owner_username }}</span>
-
-        <strong>Created:</strong>
-        <span>{{ i.created_at | date: 'medium' }}</span>
-      </div>
-
-      @if (isOwner()) {
-        <div
-          style="
-            display: flex;
-            gap: 12px;
-            margin-top: 24px;
-            padding-top: 16px;
-            border-top: 1px solid #eee;
-          "
-        >
-          <a
-            [routerLink]="['/edit-item', i.id]"
-            style="
-              padding: 8px 20px;
-              background: #1976d2;
-              color: #fff;
-              text-decoration: none;
-              border-radius: 4px;
-              font-size: 0.95em;
-            "
-          >
-            Edit
-          </a>
-          <button
-            type="button"
-            (click)="onDelete()"
-            style="
-              padding: 8px 20px;
-              background: #d32f2f;
-              color: #fff;
-              border: none;
-              border-radius: 4px;
-              cursor: pointer;
-              font-size: 0.95em;
-            "
-          >
-            Delete
-          </button>
-        </div>
-      }
-
-      @if (isLoggedIn() && !isOwner() && i.status === 'active') {
-        <div
-          style="
-            margin-top: 24px;
-            padding-top: 16px;
-            border-top: 1px solid #eee;
-          "
-        >
-          <h3 style="margin: 0 0 16px;">Submit claim</h3>
-
-          @if (claimSuccess) {
-            <p style="margin: 0 0 12px; color: #388e3c;">{{ claimSuccess }}</p>
-          }
-
-          @if (claimError) {
-            <p style="margin: 0 0 12px; color: #d32f2f;">{{ claimError }}</p>
-          }
-
-          @if (!hasPendingClaim) {
-            <form (ngSubmit)="onSubmitClaim()" style="display: grid; gap: 12px;">
-              <div style="display: grid; gap: 6px;">
-                <label for="claim-message" style="font-weight: 500;">Message</label>
-                <textarea
-                  id="claim-message"
-                  name="claimMessage"
-                  [(ngModel)]="claimMessage"
-                  rows="4"
-                  placeholder="Explain why this item belongs to you"
-                  style="
-                    width: 100%;
-                    padding: 10px 12px;
-                    border: 1px solid #ccc;
-                    border-radius: 6px;
-                    resize: vertical;
-                    font: inherit;
-                  "
-                ></textarea>
-              </div>
-
-              <button
-                type="submit"
-                [disabled]="claimSubmitting || !claimMessage.trim()"
-                style="
-                  padding: 10px 16px;
-                  border: none;
-                  border-radius: 6px;
-                  background: #1976d2;
-                  color: #fff;
-                  font-weight: 600;
-                  cursor: pointer;
-                "
-              >
-                {{ claimSubmitting ? 'Submitting...' : 'Submit claim' }}
-              </button>
-            </form>
-          }
-        </div>
-      }
-    </div>
-  }
+    }
+  </div>
 </div>
+
+<style>
+  .item-detail {
+    min-height: 100vh;
+    background: var(--color-bg-light);
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+
+  .item-detail__container {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .item-detail__back {
+    display: inline-block;
+    margin-bottom: var(--spacing-md);
+    font-size: var(--font-size-base);
+  }
+
+  .item-detail__card {
+    background: var(--color-bg-white);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Header */
+  .item-detail__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .item-detail__title {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .item-detail__badges {
+    display: flex;
+    gap: var(--spacing-sm);
+  }
+
+  /* Image */
+  .item-detail__image {
+    width: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: var(--border-radius-lg);
+    margin: var(--spacing-lg) 0;
+  }
+
+  /* Description */
+  .item-detail__description {
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-relaxed);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  /* Info grid */
+  .item-detail__info {
+    display: grid;
+    gap: var(--spacing-md);
+    margin: var(--spacing-lg) 0;
+    padding: var(--spacing-lg) 0;
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .info-row {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: var(--spacing-md);
+    align-items: center;
+  }
+
+  .info-row__label {
+    color: var(--color-dark-secondary);
+    font-size: var(--font-size-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .info-row__value {
+    font-size: var(--font-size-base);
+  }
+
+  /* Actions */
+  .item-detail__actions {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--color-border);
+    flex-wrap: wrap;
+  }
+
+  .btn-delete {
+    background: var(--color-error);
+    color: white;
+    border: none;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .btn-delete:hover {
+    background: #b91c1c;
+  }
+
+  .btn-delete:disabled {
+    background: var(--color-dark-secondary);
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  /* Claims section */
+  .item-detail__claims-section {
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .item-detail__claims-title {
+    font-size: var(--font-size-xl);
+    margin-bottom: var(--spacing-md);
+  }
+
+  .item-detail__claim-form {
+    display: grid;
+    gap: var(--spacing-md);
+  }
+
+  .form-field {
+    display: grid;
+    gap: var(--spacing-sm);
+  }
+
+  .form-field label {
+    font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-base);
+  }
+
+  .form-field textarea {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    font-family: inherit;
+    font-size: inherit;
+    line-height: var(--line-height-normal);
+    resize: vertical;
+  }
+
+  .form-field textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+  }
+
+  /* Status messages */
+  .item-detail__status {
+    text-align: center;
+    color: var(--color-dark-secondary);
+    padding: var(--spacing-lg);
+  }
+
+  .item-detail__error {
+    background: #fee2e2;
+    color: var(--color-error);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    border-left: 4px solid var(--color-error);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .item-detail__claim-success {
+    background: #dcfce7;
+    color: var(--color-active);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    border-left: 4px solid var(--color-active);
+    margin-bottom: var(--spacing-md);
+  }
+
+  .item-detail__claim-error {
+    background: #fee2e2;
+    color: var(--color-error);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    border-left: 4px solid var(--color-error);
+    margin-bottom: var(--spacing-md);
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .item-detail {
+      padding: var(--spacing-md) var(--spacing-sm);
+    }
+
+    .item-detail__card {
+      padding: var(--spacing-md);
+    }
+
+    .item-detail__header {
+      flex-direction: column;
+    }
+
+    .item-detail__badges {
+      width: 100%;
+      justify-content: flex-start;
+    }
+
+    .info-row {
+      grid-template-columns: 100px 1fr;
+    }
+
+    .item-detail__actions {
+      flex-direction: column;
+    }
+
+    .btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>
+

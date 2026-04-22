@@ -1,0 +1,14 @@
+/* Main app layout container */
+
+:host {
+  display: block;
+  height: 100%;
+}
+
+app-navbar {
+  display: block;
+}
+
+router-outlet {
+  display: block;
+}

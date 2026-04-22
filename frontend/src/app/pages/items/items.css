@@ -27,6 +27,7 @@
 }
 
 .items-page__filters select {
+  width: auto;
   padding: 8px 28px 8px 12px;
   border: 1px solid #ccc;
   border-radius: 6px;

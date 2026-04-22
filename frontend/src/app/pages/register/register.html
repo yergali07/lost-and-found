@@ -21,7 +21,11 @@
             name="username"
             autocomplete="username"
             required
+            [class.auth-field__input--invalid]="fieldError('username')"
           />
+          @if (fieldError('username')) {
+            <p class="field-error">{{ fieldError('username') }}</p>
+          }
         </div>
 
         <div class="auth-field">
@@ -33,7 +37,11 @@
             name="email"
             autocomplete="email"
             required
+            [class.auth-field__input--invalid]="fieldError('email')"
           />
+          @if (fieldError('email')) {
+            <p class="field-error">{{ fieldError('email') }}</p>
+          }
         </div>
 
         <div class="auth-field">
@@ -45,7 +53,11 @@
             name="password"
             autocomplete="new-password"
             required
+            [class.auth-field__input--invalid]="fieldError('password')"
           />
+          @if (fieldError('password')) {
+            <p class="field-error">{{ fieldError('password') }}</p>
+          }
         </div>
 
         <div class="auth-field">
@@ -57,7 +69,11 @@
             name="passwordConfirm"
             autocomplete="new-password"
             required
+            [class.auth-field__input--invalid]="fieldError('password_confirm')"
           />
+          @if (fieldError('password_confirm')) {
+            <p class="field-error">{{ fieldError('password_confirm') }}</p>
+          }
         </div>
 
         <div class="auth-actions">

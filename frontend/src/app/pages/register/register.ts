@@ -22,15 +22,19 @@ export class RegisterComponent {
   password = '';
   passwordConfirm = '';
   errorMessage = '';
+  readonly fieldErrors = signal<Record<string, string>>({});
   readonly submitting = signal(false);
 
   readonly logoSrc = '/kbtu-logo.png';
+
+  private static readonly FIELD_KEYS = ['username', 'email', 'password', 'password_confirm'];
 
   onSubmit(): void {
     if (this.submitting()) {
       return;
     }
     this.errorMessage = '';
+    this.fieldErrors.set({});
     this.submitting.set(true);
 
     const data: RegisterRequest = {
@@ -47,25 +51,36 @@ export class RegisterComponent {
           this.router.navigate(['/login']);
         },
         error: (err: unknown) => {
-          this.errorMessage = this.formatRegisterError(err);
+          this.applyError(err);
         },
       });
   }
 
-  private formatRegisterError(err: unknown): string {
+  fieldError(key: string): string {
+    return this.fieldErrors()[key] ?? '';
+  }
+
+  private applyError(err: unknown): void {
     const e = err as { error?: Record<string, unknown> };
-    if (e.error && typeof e.error === 'object') {
-      const messages: string[] = [];
-      for (const key of Object.keys(e.error)) {
-        const value = e.error[key];
-        if (Array.isArray(value)) {
-          messages.push(...value.map(String));
-        } else {
-          messages.push(String(value));
-        }
-      }
-      return messages.join(' ');
+    if (!e.error || typeof e.error !== 'object') {
+      this.errorMessage = 'Registration failed. Please try again.';
+      return;
     }
-    return 'Registration failed. Please try again.';
+
+    const fields: Record<string, string> = {};
+    const general: string[] = [];
+
+    for (const key of Object.keys(e.error)) {
+      const value = e.error[key];
+      const msg = Array.isArray(value) ? value.map(String).join(' ') : String(value);
+      if (RegisterComponent.FIELD_KEYS.includes(key)) {
+        fields[key] = msg;
+      } else {
+        general.push(msg);
+      }
+    }
+
+    this.fieldErrors.set(fields);
+    this.errorMessage = general.join(' ');
   }
 }

@@ -7,15 +7,14 @@
         <a routerLink="/items" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
           >Items</a
         >
-        @if (loggedIn()) {
-          <a routerLink="/profile" routerLinkActive="active">My Profile</a>
-        }
       </div>
 
       <div class="navbar__auth">
         @if (loggedIn()) {
           @if (me(); as u) {
-            <span class="navbar__username">{{ u.username }}</span>
+            <a routerLink="/profile" routerLinkActive="active" class="navbar__username">{{
+              u.username
+            }}</a>
           }
           <button type="button" class="navbar__button" (click)="onLogout()">Logout</button>
         } @else if (showLoginButton()) {

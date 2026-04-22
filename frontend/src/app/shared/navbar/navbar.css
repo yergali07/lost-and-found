@@ -50,6 +50,20 @@
 .navbar__username {
   font-size: 14px;
   color: #333;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.navbar__username:hover {
+  background: #f3f4f6;
+  color: #1565c0;
+}
+
+.navbar__username.active {
+  color: #1565c0;
+  background: #e3f2fd;
 }
 
 .navbar__button {

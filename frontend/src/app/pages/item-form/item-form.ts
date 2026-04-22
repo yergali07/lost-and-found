@@ -37,15 +37,15 @@ export class ItemFormComponent implements OnInit {
     'image',
   ];
 
-  title = '';
-  description = '';
-  location = '';
-  category: number | null = null;
-  itemType: 'lost' | 'found' = 'lost';
-  dateLostOrFound = '';
-  imageFile: File | null = null;
-  imagePreview: string | null = null;
-  clearImage = false;
+  readonly title = signal('');
+  readonly description = signal('');
+  readonly location = signal('');
+  readonly category = signal<number | null>(null);
+  readonly itemType = signal<'lost' | 'found'>('lost');
+  readonly dateLostOrFound = signal('');
+  readonly imageFile = signal<File | null>(null);
+  readonly imagePreview = signal<string | null>(null);
+  readonly clearImage = signal(false);
 
   ngOnInit(): void {
     this.categoryService.getCategories().subscribe({
@@ -70,14 +70,14 @@ export class ItemFormComponent implements OnInit {
     this.loading.set(true);
 
     const data: ItemCreateRequest = {
-      title: this.title,
-      description: this.description,
-      item_type: this.itemType,
-      location: this.location,
-      date_lost_or_found: this.dateLostOrFound,
-      category: this.category,
-      image: this.imageFile,
-      clearImage: this.clearImage,
+      title: this.title(),
+      description: this.description(),
+      item_type: this.itemType(),
+      location: this.location(),
+      date_lost_or_found: this.dateLostOrFound(),
+      category: this.category(),
+      image: this.imageFile(),
+      clearImage: this.clearImage(),
     };
 
     const request = this.isEditMode
@@ -101,14 +101,14 @@ export class ItemFormComponent implements OnInit {
   private loadItem(id: number): void {
     this.itemService.getItem(id).subscribe({
       next: (item) => {
-        this.title = item.title;
-        this.description = item.description;
-        this.location = item.location;
-        this.category = item.category;
-        this.itemType = item.item_type;
-        this.dateLostOrFound = item.date_lost_or_found;
+        this.title.set(item.title);
+        this.description.set(item.description);
+        this.location.set(item.location);
+        this.category.set(item.category);
+        this.itemType.set(item.item_type);
+        this.dateLostOrFound.set(item.date_lost_or_found);
         if (item.image) {
-          this.imagePreview = item.image;
+          this.imagePreview.set(item.image);
         }
       },
       error: () => this.errorMessage.set('Failed to load item.'),
@@ -118,20 +118,21 @@ export class ItemFormComponent implements OnInit {
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      this.imageFile = input.files[0];
-      this.clearImage = false;
+      const file = input.files[0];
+      this.imageFile.set(file);
+      this.clearImage.set(false);
       const reader = new FileReader();
       reader.onload = () => {
-        this.imagePreview = reader.result as string;
+        this.imagePreview.set(reader.result as string);
       };
-      reader.readAsDataURL(this.imageFile);
+      reader.readAsDataURL(file);
     }
   }
 
   onClearImage(fileInput: HTMLInputElement): void {
-    this.imageFile = null;
-    this.imagePreview = null;
-    this.clearImage = true;
+    this.imageFile.set(null);
+    this.imagePreview.set(null);
+    this.clearImage.set(true);
     fileInput.value = '';
   }
 

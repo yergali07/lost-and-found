@@ -11,10 +11,12 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Category, Item, Claim
+from .models import Category, Item, Claim, Comment
 from .permissions import IsOwnerOrReadOnly
 from .serializers import (
     CategorySerializer,
+    ChangePasswordSerializer,
+    CommentSerializer,
     ItemSerializer,
     RegisterSerializer,
     UserSerializer,
@@ -351,6 +353,59 @@ def approve_claim(request, pk):
 
     serializer = ClaimSerializer(claim)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ItemCommentsAPIView(APIView):
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAuthenticated()]
+        return [AllowAny()]
+
+    def get(self, request, pk):
+        if not Item.objects.filter(pk=pk).exists():
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        comments = Comment.objects.select_related('author').filter(item_id=pk)
+        serializer = CommentSerializer(comments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, pk):
+        try:
+            item = Item.objects.get(pk=pk)
+        except Item.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        data = {**request.data, 'item': item.pk}
+        serializer = CommentSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(author=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_comment_view(request, pk):
+    try:
+        comment = Comment.objects.select_related('author', 'item__owner').get(pk=pk)
+    except Comment.DoesNotExist:
+        return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if comment.author != request.user and comment.item.owner != request.user:
+        return Response(
+            {'detail': 'You do not have permission to perform this action.'},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    comment.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_password_view(request):
+    serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response({'detail': 'Password changed successfully.'}, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])

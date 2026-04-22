@@ -66,3 +66,17 @@ class Claim(models.Model):
 
     def __str__(self):
         return f"Claim {self.id} by {self.claimant.username} for {self.item.title}"
+
+
+class Comment(models.Model):
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='comments')
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Comment {self.id} by {self.author.username} on {self.item.title}"

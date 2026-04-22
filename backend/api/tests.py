@@ -6,7 +6,7 @@ from django.test import override_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Category, Item, Claim
+from .models import Category, Item, Claim, Comment
 
 
 # Throttle classes use the cache backend, so we both wipe the cache between
@@ -621,3 +621,182 @@ class ClaimFlowTests(_BaseAPITestCase):
         self.client.force_authenticate(user=self.owner)
         response = self.client.post('/api/items/999999/mark-resolved/')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class CommentTests(_BaseAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.owner = User.objects.create_user(username='owner', password='Testpass1!')
+        self.other = User.objects.create_user(username='other', password='Testpass1!')
+        self.category, _ = Category.objects.get_or_create(name='Electronics')
+        self.item = Item.objects.create(
+            title='Lost iPhone',
+            description='Black iPhone',
+            item_type='lost',
+            status='active',
+            location='Library',
+            date_lost_or_found=date(2026, 4, 1),
+            owner=self.owner,
+            category=self.category,
+        )
+
+    def test_list_comments_public(self):
+        Comment.objects.create(content='Hi', author=self.other, item=self.item)
+        response = self.client.get(f'/api/items/{self.item.pk}/comments/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['content'], 'Hi')
+        self.assertEqual(response.data[0]['author_username'], 'other')
+
+    def test_list_comments_item_not_found(self):
+        response = self.client.get('/api/items/999999/comments/')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_create_comment_authenticated(self):
+        self.client.force_authenticate(user=self.other)
+        response = self.client.post(
+            f'/api/items/{self.item.pk}/comments/',
+            {'content': 'Where exactly?'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['author'], self.other.pk)
+        self.assertEqual(response.data['item'], self.item.pk)
+
+    def test_create_comment_unauthenticated(self):
+        response = self.client.post(
+            f'/api/items/{self.item.pk}/comments/',
+            {'content': 'Hi'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_create_comment_empty_content_rejected(self):
+        self.client.force_authenticate(user=self.other)
+        response = self.client.post(
+            f'/api/items/{self.item.pk}/comments/',
+            {'content': ''},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_comment_item_not_found(self):
+        self.client.force_authenticate(user=self.other)
+        response = self.client.post(
+            '/api/items/999999/comments/',
+            {'content': 'Hi'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_comment_by_author(self):
+        comment = Comment.objects.create(content='Hi', author=self.other, item=self.item)
+        self.client.force_authenticate(user=self.other)
+        response = self.client.delete(f'/api/comments/{comment.pk}/')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Comment.objects.filter(pk=comment.pk).exists())
+
+    def test_delete_comment_by_item_owner(self):
+        comment = Comment.objects.create(content='Hi', author=self.other, item=self.item)
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.delete(f'/api/comments/{comment.pk}/')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_delete_comment_by_stranger_forbidden(self):
+        comment = Comment.objects.create(content='Hi', author=self.other, item=self.item)
+        stranger = User.objects.create_user(username='stranger', password='Testpass1!')
+        self.client.force_authenticate(user=stranger)
+        response = self.client.delete(f'/api/comments/{comment.pk}/')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Comment.objects.filter(pk=comment.pk).exists())
+
+    def test_delete_comment_not_found(self):
+        self.client.force_authenticate(user=self.other)
+        response = self.client.delete('/api/comments/999999/')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class ChangePasswordTests(_BaseAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.user = User.objects.create_user(username='owner', password='Oldpass1!')
+
+    def test_change_password_success(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(
+            '/api/auth/change-password/',
+            {
+                'old_password': 'Oldpass1!',
+                'new_password': 'Newpass123!',
+                'new_password_confirm': 'Newpass123!',
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('Newpass123!'))
+
+    def test_change_password_requires_auth(self):
+        response = self.client.post(
+            '/api/auth/change-password/',
+            {
+                'old_password': 'Oldpass1!',
+                'new_password': 'Newpass123!',
+                'new_password_confirm': 'Newpass123!',
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_change_password_wrong_old_password(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(
+            '/api/auth/change-password/',
+            {
+                'old_password': 'WrongOld!',
+                'new_password': 'Newpass123!',
+                'new_password_confirm': 'Newpass123!',
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('old_password', response.data)
+
+    def test_change_password_mismatch(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(
+            '/api/auth/change-password/',
+            {
+                'old_password': 'Oldpass1!',
+                'new_password': 'Newpass123!',
+                'new_password_confirm': 'Different123!',
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_change_password_same_as_old(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(
+            '/api/auth/change-password/',
+            {
+                'old_password': 'Oldpass1!',
+                'new_password': 'Oldpass1!',
+                'new_password_confirm': 'Oldpass1!',
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_change_password_too_short(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(
+            '/api/auth/change-password/',
+            {
+                'old_password': 'Oldpass1!',
+                'new_password': 'short',
+                'new_password_confirm': 'short',
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

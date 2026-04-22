@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from .models import Category, Item, Claim
+from .models import Category, Item, Claim, Comment
 
 
 MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
@@ -102,6 +102,52 @@ class RegisterSerializer(serializers.Serializer):
             email=validated_data['email'],
             password=validated_data['password'],
         )
+        return user
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author_username = serializers.CharField(source='author.username', read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = [
+            'id',
+            'content',
+            'created_at',
+            'updated_at',
+            'author',
+            'author_username',
+            'item',
+        ]
+        read_only_fields = ['author', 'created_at', 'updated_at']
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True, min_length=8)
+    new_password_confirm = serializers.CharField(write_only=True)
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError('Current password is incorrect.')
+        return value
+
+    def validate(self, data):
+        if data['new_password'] != data['new_password_confirm']:
+            raise serializers.ValidationError(
+                {'new_password_confirm': 'Passwords do not match.'}
+            )
+        if data['new_password'] == data['old_password']:
+            raise serializers.ValidationError(
+                {'new_password': 'New password must be different from the current one.'}
+            )
+        return data
+
+    def save(self, **kwargs):
+        user = self.context['request'].user
+        user.set_password(self.validated_data['new_password'])
+        user.save(update_fields=['password'])
         return user
 
 

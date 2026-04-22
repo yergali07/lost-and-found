@@ -93,3 +93,73 @@
   font-size: 13px;
   color: #6b7280;
 }
+
+.profile-password {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #eee;
+}
+
+.profile-password__toggle {
+  background: none;
+  border: 1px solid #1565c0;
+  color: #1565c0;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.profile-password__toggle:hover {
+  background: #f0f7ff;
+}
+
+.profile-password__form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  max-width: 360px;
+}
+
+.profile-password__label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: #333;
+}
+
+.profile-password__input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.profile-password__submit {
+  padding: 10px;
+  background: #1565c0;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.profile-password__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.profile-password__success {
+  color: #1b5e20;
+  margin: 0;
+  font-size: 14px;
+}
+
+.profile-password__error {
+  color: #b00020;
+  margin: 0;
+  font-size: 13px;
+}

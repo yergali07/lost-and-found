@@ -7,8 +7,10 @@ import { finalize, timeout } from 'rxjs';
 import { ItemService } from '../../core/services/item.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ClaimService } from '../../core/services/claim.service';
+import { CommentService } from '../../core/services/comment.service';
 import { Item } from '../../models/item.model';
 import { User } from '../../models/auth.model';
+import { Comment } from '../../models/comment.model';
 
 @Component({
   selector: 'app-item-detail',
@@ -23,6 +25,7 @@ export class ItemDetailComponent implements OnInit {
   private itemService = inject(ItemService);
   private authService = inject(AuthService);
   private claimService = inject(ClaimService);
+  private commentService = inject(CommentService);
 
   protected readonly item = signal<Item | null>(null);
   protected readonly me = signal<User | null>(null);
@@ -32,10 +35,24 @@ export class ItemDetailComponent implements OnInit {
   protected readonly hasPendingClaim = signal(false);
   protected readonly deleting = signal(false);
 
+  protected readonly comments = signal<Comment[]>([]);
+  protected readonly commentsError = signal('');
+
   claimMessage = '';
   claimSubmitting = false;
   claimSuccess = '';
   claimError = '';
+
+  commentInput = '';
+  commentSubmitting = false;
+  commentError = '';
+
+  protected canDeleteComment(comment: Comment): boolean {
+    const me = this.me();
+    const item = this.item();
+    if (!me || !item) return false;
+    return comment.author === me.id || item.owner === me.id;
+  }
 
   protected readonly isOwner = computed(
     () => this.item() !== null && this.me() !== null && this.item()!.owner === this.me()!.id,
@@ -61,6 +78,8 @@ export class ItemDetailComponent implements OnInit {
         this.loading.set(false);
       },
     });
+
+    this.loadComments(id);
 
     this.authService.getMe().subscribe({
       next: (me) => this.me.set(me),
@@ -107,6 +126,49 @@ export class ItemDetailComponent implements OnInit {
           this.claimError = this.formatClaimError(err);
         },
       });
+  }
+
+  private loadComments(itemId: number): void {
+    this.commentService.listComments(itemId).subscribe({
+      next: (comments) => this.comments.set(comments),
+      error: () => this.commentsError.set('Failed to load comments.'),
+    });
+  }
+
+  onSubmitComment(): void {
+    const item = this.item();
+    const content = this.commentInput.trim();
+    if (!item || !content || this.commentSubmitting) {
+      return;
+    }
+
+    this.commentError = '';
+    this.commentSubmitting = true;
+
+    this.commentService
+      .createComment(item.id, content)
+      .pipe(finalize(() => (this.commentSubmitting = false)))
+      .subscribe({
+        next: (comment) => {
+          this.comments.update((list) => [...list, comment]);
+          this.commentInput = '';
+        },
+        error: (err: unknown) => {
+          const e = err as { error?: { content?: string[]; detail?: string } };
+          this.commentError =
+            e.error?.content?.[0] ?? e.error?.detail ?? 'Failed to post comment.';
+        },
+      });
+  }
+
+  onDeleteComment(commentId: number): void {
+    if (!confirm('Delete this comment?')) {
+      return;
+    }
+    this.commentService.deleteComment(commentId).subscribe({
+      next: () => this.comments.update((list) => list.filter((c) => c.id !== commentId)),
+      error: () => this.commentsError.set('Failed to delete comment.'),
+    });
   }
 
   onDelete(): void {

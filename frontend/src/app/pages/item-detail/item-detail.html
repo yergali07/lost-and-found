@@ -80,6 +80,65 @@
         </div>
       }
 
+      <div class="detail-comments">
+        <h3 class="detail-comments__title">Comments</h3>
+
+        @if (commentsError()) {
+          <p class="detail-claim__error">{{ commentsError() }}</p>
+        }
+
+        @if (comments().length === 0) {
+          <p class="detail-comments__empty">No comments yet.</p>
+        } @else {
+          <ul class="detail-comments__list">
+            @for (c of comments(); track c.id) {
+              <li class="detail-comment">
+                <div class="detail-comment__meta">
+                  <strong>{{ c.author_username }}</strong>
+                  <span>{{ c.created_at | date: 'medium' }}</span>
+                </div>
+                <p class="detail-comment__content">{{ c.content }}</p>
+                @if (canDeleteComment(c)) {
+                  <button
+                    type="button"
+                    class="detail-comment__delete"
+                    (click)="onDeleteComment(c.id)"
+                  >
+                    Delete
+                  </button>
+                }
+              </li>
+            }
+          </ul>
+        }
+
+        @if (isLoggedIn()) {
+          <form (ngSubmit)="onSubmitComment()" class="detail-comments__form">
+            @if (commentError) {
+              <p class="detail-claim__error">{{ commentError }}</p>
+            }
+            <textarea
+              name="commentInput"
+              [(ngModel)]="commentInput"
+              rows="2"
+              placeholder="Add a comment"
+              class="detail-claim__textarea"
+            ></textarea>
+            <button
+              type="submit"
+              [disabled]="commentSubmitting || !commentInput.trim()"
+              class="detail-claim__submit"
+            >
+              @if (commentSubmitting) {
+                <span>Posting…</span>
+              } @else {
+                <span>Post comment</span>
+              }
+            </button>
+          </form>
+        }
+      </div>
+
       @if (isLoggedIn() && !isOwner() && i.status === 'active') {
         <div class="detail-claim">
           <h3 class="detail-claim__title">Submit claim</h3>

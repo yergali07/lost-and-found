@@ -42,6 +42,80 @@
         <span class="profile-card__hint">Claims you've submitted</span>
       </a>
     </div>
+
+    <section class="profile-password">
+      <button type="button" class="profile-password__toggle" (click)="togglePasswordForm()">
+        {{ passwordFormOpen() ? 'Cancel password change' : 'Change password' }}
+      </button>
+
+      @if (passwordFormOpen()) {
+        <form (ngSubmit)="onChangePassword()" class="profile-password__form">
+          @if (passwordSuccess()) {
+            <p class="profile-password__success">{{ passwordSuccess() }}</p>
+          }
+          @if (passwordErrors()['_']) {
+            <p class="profile-password__error">{{ passwordErrors()['_'] }}</p>
+          }
+
+          <label class="profile-password__label">
+            Current password
+            <input
+              type="password"
+              name="oldPassword"
+              [(ngModel)]="oldPassword"
+              required
+              class="profile-password__input"
+            />
+            @if (passwordErrors()['old_password']) {
+              <span class="profile-password__error">{{ passwordErrors()['old_password'] }}</span>
+            }
+          </label>
+
+          <label class="profile-password__label">
+            New password
+            <input
+              type="password"
+              name="newPassword"
+              [(ngModel)]="newPassword"
+              required
+              minlength="8"
+              class="profile-password__input"
+            />
+            @if (passwordErrors()['new_password']) {
+              <span class="profile-password__error">{{ passwordErrors()['new_password'] }}</span>
+            }
+          </label>
+
+          <label class="profile-password__label">
+            Confirm new password
+            <input
+              type="password"
+              name="newPasswordConfirm"
+              [(ngModel)]="newPasswordConfirm"
+              required
+              class="profile-password__input"
+            />
+            @if (passwordErrors()['new_password_confirm']) {
+              <span class="profile-password__error">
+                {{ passwordErrors()['new_password_confirm'] }}
+              </span>
+            }
+          </label>
+
+          <button
+            type="submit"
+            [disabled]="passwordSubmitting() || !oldPassword || !newPassword || !newPasswordConfirm"
+            class="profile-password__submit"
+          >
+            @if (passwordSubmitting()) {
+              <span>Saving…</span>
+            } @else {
+              <span>Save new password</span>
+            }
+          </button>
+        </form>
+      }
+    </section>
   } @else if (!errorMessage()) {
     <p class="profile-page__status">Loading profile…</p>
   }

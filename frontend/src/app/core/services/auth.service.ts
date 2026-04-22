@@ -3,7 +3,13 @@ import { inject, Injectable } from '@angular/core';
 import { Observable, finalize, of, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { AuthTokens, LoginRequest, RegisterRequest, User } from '../../models/auth.model';
+import {
+  AuthTokens,
+  ChangePasswordRequest,
+  LoginRequest,
+  RegisterRequest,
+  User,
+} from '../../models/auth.model';
 
 const AUTH_URL = `${environment.apiBaseUrl}/auth`;
 
@@ -49,6 +55,10 @@ export class AuthService {
 
   getMe(): Observable<User> {
     return this.http.get<User>(`${AUTH_URL}/me/`);
+  }
+
+  changePassword(data: ChangePasswordRequest): Observable<{ detail: string }> {
+    return this.http.post<{ detail: string }>(`${AUTH_URL}/change-password/`, data);
   }
 
   isLoggedIn(): boolean {

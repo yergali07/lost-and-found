@@ -5,20 +5,22 @@ import { finalize } from 'rxjs';
 
 import { ItemService } from '../../core/services/item.service';
 import { Item } from '../../models/item.model';
-import { ClaimResponse, ClaimService } from '../../core/services/claim.service';
+import { ClaimService } from '../../core/services/claim.service';
+import { Claim } from '../../models/claim.model';
 
 @Component({
   selector: 'app-my-items',
   standalone: true,
   imports: [RouterLink, DatePipe, TitleCasePipe],
   templateUrl: './my-items.html',
+  styleUrl: './my-items.css',
 })
 export class MyItemsComponent implements OnInit {
   private itemService = inject(ItemService);
   private claimService = inject(ClaimService);
 
   items = signal<Item[]>([]);
-  claimsByItem = signal<Record<number, ClaimResponse[]>>({});
+  claimsByItem = signal<Record<number, Claim[]>>({});
   expandedItems = signal<Record<number, boolean>>({});
   actionLoading = signal<Record<number, boolean>>({});
   resolveLoading = signal<Record<number, boolean>>({});
@@ -54,7 +56,7 @@ export class MyItemsComponent implements OnInit {
 
     this.claimService.getMyItemClaims().subscribe({
       next: (claims) => {
-        const grouped: Record<number, ClaimResponse[]> = {};
+        const grouped: Record<number, Claim[]> = {};
         for (const claim of claims) {
           if (!grouped[claim.item]) {
             grouped[claim.item] = [];
@@ -82,7 +84,7 @@ export class MyItemsComponent implements OnInit {
     return !!this.expandedItems()[itemId];
   }
 
-  getClaimsForItem(itemId: number): ClaimResponse[] {
+  getClaimsForItem(itemId: number): Claim[] {
     return this.claimsByItem()[itemId] || [];
   }
 
@@ -165,7 +167,7 @@ export class MyItemsComponent implements OnInit {
     }));
   }
 
-  private applyClaimUpdate(updatedClaim: ClaimResponse): void {
+  private applyClaimUpdate(updatedClaim: Claim): void {
     this.claimsByItem.update((grouped) => {
       const itemClaims = grouped[updatedClaim.item] || [];
       const updatedItemClaims = itemClaims.map((claim) =>

@@ -1,6 +1,6 @@
 <div class="my-items">
   <header class="my-items__header">
-    <a routerLink="/items" class="my-items__back">&larr; Back to items</a>
+    <a routerLink="/items" class="my-items__back">← Back to items</a>
     <h1>My Items</h1>
   </header>
 
@@ -28,7 +28,8 @@
           </div>
 
           <p class="my-item-card__meta">
-            {{ item.item_type | titlecase }} · {{ item.category_name }} · {{ item.created_at | date: 'medium' }}
+            {{ item.item_type | titlecase }} · {{ item.category_name }} ·
+            {{ item.created_at | date: 'medium' }}
           </p>
 
           <p class="my-item-card__description">{{ item.description }}</p>
@@ -94,173 +95,3 @@
     </div>
   }
 </div>
-
-<style>
-  .my-items {
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 24px 16px;
-  }
-
-  .my-items__header {
-    margin-bottom: 24px;
-  }
-
-  .my-items__back {
-    font-size: 14px;
-    color: #1565c0;
-    text-decoration: none;
-  }
-
-  .my-items__back:hover {
-    text-decoration: underline;
-  }
-
-  .my-items__header h1 {
-    margin: 8px 0 0;
-    font-size: 24px;
-  }
-
-  .my-items__error {
-    color: #b00020;
-    margin-bottom: 16px;
-  }
-
-  .my-items__message {
-    color: #1b5e20;
-    margin-bottom: 16px;
-  }
-
-  .my-items__status {
-    text-align: center;
-    color: #666;
-    padding: 40px 0;
-    font-size: 16px;
-  }
-
-  .my-items__list {
-    display: grid;
-    gap: 16px;
-  }
-
-  .my-item-card {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 16px;
-    background: #fff;
-  }
-
-  .my-item-card__head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .my-item-card__head h2 {
-    margin: 0;
-    font-size: 18px;
-  }
-
-  .badge {
-    background: #6d6d6d;
-    color: #fff;
-    border-radius: 12px;
-    padding: 4px 10px;
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  .badge--active {
-    background: #1976d2;
-  }
-
-  .my-item-card__meta {
-    margin: 8px 0 4px;
-    color: #666;
-    font-size: 13px;
-  }
-
-  .my-item-card__description {
-    margin: 8px 0 12px;
-  }
-
-  .my-item-card__actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .my-item-card__actions button,
-  .my-item-card__actions a {
-    border: 1px solid #1976d2;
-    background: #1976d2;
-    color: #fff;
-    border-radius: 6px;
-    padding: 6px 10px;
-    text-decoration: none;
-    font-size: 13px;
-    cursor: pointer;
-  }
-
-  .claims-box {
-    margin-top: 12px;
-    border-top: 1px solid #eee;
-    padding-top: 12px;
-    display: grid;
-    gap: 8px;
-  }
-
-  .claims-box__empty {
-    margin: 0;
-    color: #777;
-  }
-
-  .claim-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-    border: 1px solid #eee;
-    border-radius: 6px;
-    padding: 10px;
-  }
-
-  .claim-row p {
-    margin: 4px 0 0;
-  }
-
-  .claim-row__right {
-    text-align: right;
-    display: grid;
-    gap: 6px;
-  }
-
-  .claim-status {
-    font-size: 13px;
-    font-weight: 600;
-    color: #444;
-  }
-
-  .claim-row__actions {
-    display: flex;
-    gap: 6px;
-  }
-
-  .claim-row__actions button {
-    border: none;
-    border-radius: 6px;
-    padding: 6px 10px;
-    color: #fff;
-    cursor: pointer;
-    font-size: 12px;
-  }
-
-  .claim-row__actions button:first-child {
-    background: #2e7d32;
-  }
-
-  .claim-row__actions button:last-child {
-    background: #d32f2f;
-  }
-</style>

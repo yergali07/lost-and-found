@@ -1,48 +1,31 @@
-<div style="max-width: 720px; margin: 40px auto; padding: 0 16px;">
-  <a routerLink="/items" style="display: inline-block; margin-bottom: 16px;">&larr; Back to items</a>
+<div class="detail-shell">
+  <a routerLink="/items" class="detail-back">← Back to items</a>
 
   @if (loading()) {
     <p>Loading...</p>
   }
 
   @if (errorMessage(); as err) {
-    <p style="color: #b00020;">{{ err }}</p>
+    <p class="detail-error">{{ err }}</p>
   }
 
   @if (item(); as i) {
-    <div style="border: 1px solid #ddd; border-radius: 8px; padding: 24px;">
-      <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 8px;">
-        <h2 style="margin: 0;">{{ i.title }}</h2>
-        <div style="display: flex; gap: 8px;">
+    <div class="detail-card">
+      <div class="detail-header">
+        <h2 class="detail-title">{{ i.title }}</h2>
+        <div class="detail-badges">
           <span
-            style="
-              padding: 4px 10px;
-              border-radius: 12px;
-              font-size: 0.85em;
-              font-weight: 500;
-              color: #fff;
-            "
-            [style.background-color]="
-              i.item_type === 'lost' ? '#d32f2f' : '#388e3c'
-            "
+            class="detail-badge"
+            [class.detail-badge--lost]="i.item_type === 'lost'"
+            [class.detail-badge--found]="i.item_type === 'found'"
           >
             {{ i.item_type === 'lost' ? 'Lost' : 'Found' }}
           </span>
           <span
-            style="
-              padding: 4px 10px;
-              border-radius: 12px;
-              font-size: 0.85em;
-              font-weight: 500;
-              color: #fff;
-            "
-            [style.background-color]="
-              i.status === 'active'
-                ? '#1976d2'
-                : i.status === 'claimed'
-                  ? '#f57c00'
-                  : '#388e3c'
-            "
+            class="detail-badge"
+            [class.detail-badge--active]="i.status === 'active'"
+            [class.detail-badge--claimed]="i.status === 'claimed'"
+            [class.detail-badge--resolved]="i.status === 'resolved'"
           >
             {{ i.status | titlecase }}
           </span>
@@ -50,30 +33,12 @@
       </div>
 
       @if (i.image) {
-        <img
-          [src]="i.image"
-          [alt]="i.title"
-          style="
-            width: 100%;
-            max-height: 400px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-top: 16px;
-          "
-        />
+        <img [src]="i.image" [alt]="i.title" class="detail-image" loading="lazy" />
       }
 
-      <p style="margin-top: 16px; line-height: 1.6;">{{ i.description }}</p>
+      <p class="detail-description">{{ i.description }}</p>
 
-      <div
-        style="
-          display: grid;
-          grid-template-columns: auto 1fr;
-          gap: 8px 16px;
-          margin-top: 16px;
-          font-size: 0.95em;
-        "
-      >
+      <div class="detail-meta">
         <strong>Category:</strong>
         <span>{{ i.category_name }}</span>
 
@@ -91,40 +56,12 @@
       </div>
 
       @if (isOwner()) {
-        <div
-          style="
-            display: flex;
-            gap: 12px;
-            margin-top: 24px;
-            padding-top: 16px;
-            border-top: 1px solid #eee;
-          "
-        >
-          <a
-            [routerLink]="['/edit-item', i.id]"
-            style="
-              padding: 8px 20px;
-              background: #1976d2;
-              color: #fff;
-              text-decoration: none;
-              border-radius: 4px;
-              font-size: 0.95em;
-            "
-          >
-            Edit
-          </a>
+        <div class="detail-actions">
+          <a [routerLink]="['/edit-item', i.id]" class="detail-action-button">Edit</a>
           <button
             type="button"
             (click)="onDelete()"
-            style="
-              padding: 8px 20px;
-              background: #d32f2f;
-              color: #fff;
-              border: none;
-              border-radius: 4px;
-              cursor: pointer;
-              font-size: 0.95em;
-            "
+            class="detail-action-button detail-action-button--danger"
           >
             Delete
           </button>
@@ -132,56 +69,35 @@
       }
 
       @if (isLoggedIn() && !isOwner() && i.status === 'active') {
-        <div
-          style="
-            margin-top: 24px;
-            padding-top: 16px;
-            border-top: 1px solid #eee;
-          "
-        >
-          <h3 style="margin: 0 0 16px;">Submit claim</h3>
+        <div class="detail-claim">
+          <h3 class="detail-claim__title">Submit claim</h3>
 
           @if (claimSuccess) {
-            <p style="margin: 0 0 12px; color: #388e3c;">{{ claimSuccess }}</p>
+            <p class="detail-claim__success">{{ claimSuccess }}</p>
           }
 
           @if (claimError) {
-            <p style="margin: 0 0 12px; color: #d32f2f;">{{ claimError }}</p>
+            <p class="detail-claim__error">{{ claimError }}</p>
           }
 
-          @if (!hasPendingClaim) {
-            <form (ngSubmit)="onSubmitClaim()" style="display: grid; gap: 12px;">
-              <div style="display: grid; gap: 6px;">
-                <label for="claim-message" style="font-weight: 500;">Message</label>
+          @if (!hasPendingClaim()) {
+            <form (ngSubmit)="onSubmitClaim()" class="detail-claim__form">
+              <div class="detail-claim__field">
+                <label for="claim-message" class="detail-claim__label">Message</label>
                 <textarea
                   id="claim-message"
                   name="claimMessage"
                   [(ngModel)]="claimMessage"
                   rows="4"
                   placeholder="Explain why this item belongs to you"
-                  style="
-                    width: 100%;
-                    padding: 10px 12px;
-                    border: 1px solid #ccc;
-                    border-radius: 6px;
-                    resize: vertical;
-                    font: inherit;
-                  "
+                  class="detail-claim__textarea"
                 ></textarea>
               </div>
 
               <button
                 type="submit"
                 [disabled]="claimSubmitting || !claimMessage.trim()"
-                style="
-                  padding: 10px 16px;
-                  border: none;
-                  border-radius: 6px;
-                  background: #1976d2;
-                  color: #fff;
-                  font-weight: 600;
-                  cursor: pointer;
-                "
+                class="detail-claim__submit"
               >
                 {{ claimSubmitting ? 'Submitting...' : 'Submit claim' }}
               </button>

@@ -29,4 +29,5 @@ export interface ItemCreateRequest {
   date_lost_or_found: string;
   category: number | null;
   image?: File | null;
+  clearImage?: boolean;
 }

@@ -4,13 +4,16 @@
       <a routerLink="/items" class="navbar__brand">Lost &amp; Found</a>
 
       <div class="navbar__links">
-        <a routerLink="/items" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Items</a>
-        <a routerLink="/items/me" routerLinkActive="active">My Items</a>
-        <a routerLink="/my-claims" routerLinkActive="active">My Claims</a>
+        <a routerLink="/items" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
+          >Items</a
+        >
+        @if (loggedIn()) {
+          <a routerLink="/profile" routerLinkActive="active">My Profile</a>
+        }
       </div>
 
       <div class="navbar__auth">
-        @if (isLoggedIn()) {
+        @if (loggedIn()) {
           @if (me(); as u) {
             <span class="navbar__username">{{ u.username }}</span>
           }

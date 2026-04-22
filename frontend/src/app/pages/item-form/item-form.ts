@@ -33,6 +33,7 @@ export class ItemFormComponent implements OnInit {
   dateLostOrFound = '';
   imageFile: File | null = null;
   imagePreview: string | null = null;
+  clearImage = false;
 
   ngOnInit(): void {
     this.categoryService.getCategories().subscribe({
@@ -64,6 +65,7 @@ export class ItemFormComponent implements OnInit {
       date_lost_or_found: this.dateLostOrFound,
       category: this.category,
       image: this.imageFile,
+      clearImage: this.clearImage,
     };
 
     const request = this.isEditMode
@@ -104,12 +106,20 @@ export class ItemFormComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       this.imageFile = input.files[0];
+      this.clearImage = false;
       const reader = new FileReader();
       reader.onload = () => {
         this.imagePreview = reader.result as string;
       };
       reader.readAsDataURL(this.imageFile);
     }
+  }
+
+  onClearImage(fileInput: HTMLInputElement): void {
+    this.imageFile = null;
+    this.imagePreview = null;
+    this.clearImage = true;
+    fileInput.value = '';
   }
 
   private formatError(err: unknown): string {

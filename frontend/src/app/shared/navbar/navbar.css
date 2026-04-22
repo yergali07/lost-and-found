@@ -26,21 +26,6 @@
   font-size: 18px;
 }
 
-.navbar__links {
-  display: flex;
-  gap: 18px;
-}
-
-.navbar__links a {
-  text-decoration: none;
-  color: #1565c0;
-  font-weight: 500;
-}
-
-.navbar__links a.active {
-  text-decoration: underline;
-}
-
 .navbar__auth {
   display: flex;
   align-items: center;

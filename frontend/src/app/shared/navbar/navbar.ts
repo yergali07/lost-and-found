@@ -20,10 +20,11 @@ export class NavbarComponent implements OnInit, OnDestroy {
   me = signal<User | null>(null);
   loggedIn = signal(false);
   showNavbar = signal(true);
+  currentUrl = signal(this.router.url);
 
   showLoginButton = computed(() => {
     if (this.loggedIn()) return false;
-    const url = this.router.url;
+    const url = this.currentUrl();
     return !(url.startsWith('/login') || url.startsWith('/register'));
   });
 
@@ -63,6 +64,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
   private updateChromeForUrl(url: string): void {
     const onAuthPages = url.startsWith('/login') || url.startsWith('/register');
     this.showNavbar.set(!onAuthPages);
+    this.currentUrl.set(url);
   }
 
   private refreshAuthState(): void {

@@ -1,6 +1,7 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { finalize } from 'rxjs/operators';
 
 import { CategoryService } from '../../core/services/category.service';
 import { ItemService } from '../../core/services/item.service';
@@ -21,28 +22,35 @@ export class ItemFormComponent implements OnInit {
 
   isEditMode = false;
   itemId: number | null = null;
-  categories: Category[] = [];
-  errorMessage = '';
-  loading = false;
+  readonly categories = signal<Category[]>([]);
+  readonly errorMessage = signal('');
+  readonly fieldErrors = signal<Record<string, string>>({});
+  readonly loading = signal(false);
 
-  title = '';
-  description = '';
-  location = '';
-  category: number | null = null;
-  itemType: 'lost' | 'found' = 'lost';
-  dateLostOrFound = '';
-  imageFile: File | null = null;
-  imagePreview: string | null = null;
-  clearImage = false;
+  private static readonly FIELD_KEYS = [
+    'title',
+    'description',
+    'location',
+    'category',
+    'item_type',
+    'date_lost_or_found',
+    'image',
+  ];
+
+  readonly title = signal('');
+  readonly description = signal('');
+  readonly location = signal('');
+  readonly category = signal<number | null>(null);
+  readonly itemType = signal<'lost' | 'found'>('lost');
+  readonly dateLostOrFound = signal('');
+  readonly imageFile = signal<File | null>(null);
+  readonly imagePreview = signal<string | null>(null);
+  readonly clearImage = signal(false);
 
   ngOnInit(): void {
     this.categoryService.getCategories().subscribe({
-      next: (categories) => {
-        this.categories = categories;
-      },
-      error: () => {
-        this.errorMessage = 'Failed to load categories.';
-      },
+      next: (categories) => this.categories.set(categories),
+      error: () => this.errorMessage.set('Failed to load categories.'),
     });
 
     const idParam = this.route.snapshot.paramMap.get('id');
@@ -54,88 +62,101 @@ export class ItemFormComponent implements OnInit {
   }
 
   onSubmit(): void {
-    this.errorMessage = '';
-    this.loading = true;
+    if (this.loading()) {
+      return;
+    }
+    this.errorMessage.set('');
+    this.fieldErrors.set({});
+    this.loading.set(true);
 
     const data: ItemCreateRequest = {
-      title: this.title,
-      description: this.description,
-      item_type: this.itemType,
-      location: this.location,
-      date_lost_or_found: this.dateLostOrFound,
-      category: this.category,
-      image: this.imageFile,
-      clearImage: this.clearImage,
+      title: this.title(),
+      description: this.description(),
+      item_type: this.itemType(),
+      location: this.location(),
+      date_lost_or_found: this.dateLostOrFound(),
+      category: this.category(),
+      image: this.imageFile(),
+      clearImage: this.clearImage(),
     };
 
     const request = this.isEditMode
       ? this.itemService.updateItem(this.itemId!, data)
       : this.itemService.createItem(data);
 
-    request.subscribe({
+    request.pipe(finalize(() => this.loading.set(false))).subscribe({
       next: () => {
         this.router.navigate(['/items']);
       },
       error: (err: unknown) => {
-        this.loading = false;
-        this.errorMessage = this.formatError(err);
+        this.applyError(err);
       },
     });
+  }
+
+  fieldError(key: string): string {
+    return this.fieldErrors()[key] ?? '';
   }
 
   private loadItem(id: number): void {
     this.itemService.getItem(id).subscribe({
       next: (item) => {
-        this.title = item.title;
-        this.description = item.description;
-        this.location = item.location;
-        this.category = item.category;
-        this.itemType = item.item_type;
-        this.dateLostOrFound = item.date_lost_or_found;
+        this.title.set(item.title);
+        this.description.set(item.description);
+        this.location.set(item.location);
+        this.category.set(item.category);
+        this.itemType.set(item.item_type);
+        this.dateLostOrFound.set(item.date_lost_or_found);
         if (item.image) {
-          this.imagePreview = item.image;
+          this.imagePreview.set(item.image);
         }
       },
-      error: () => {
-        this.errorMessage = 'Failed to load item.';
-      },
+      error: () => this.errorMessage.set('Failed to load item.'),
     });
   }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      this.imageFile = input.files[0];
-      this.clearImage = false;
+      const file = input.files[0];
+      this.imageFile.set(file);
+      this.clearImage.set(false);
       const reader = new FileReader();
       reader.onload = () => {
-        this.imagePreview = reader.result as string;
+        this.imagePreview.set(reader.result as string);
       };
-      reader.readAsDataURL(this.imageFile);
+      reader.readAsDataURL(file);
     }
   }
 
   onClearImage(fileInput: HTMLInputElement): void {
-    this.imageFile = null;
-    this.imagePreview = null;
-    this.clearImage = true;
+    this.imageFile.set(null);
+    this.imagePreview.set(null);
+    this.clearImage.set(true);
     fileInput.value = '';
   }
 
-  private formatError(err: unknown): string {
+  private applyError(err: unknown): void {
     const e = err as { error?: Record<string, unknown> };
-    if (e.error && typeof e.error === 'object') {
-      const messages: string[] = [];
-      for (const key of Object.keys(e.error)) {
-        const value = e.error[key];
-        if (Array.isArray(value)) {
-          messages.push(...value.map(String));
-        } else {
-          messages.push(String(value));
-        }
-      }
-      return messages.join(' ');
+    if (!e.error || typeof e.error !== 'object') {
+      this.errorMessage.set('Something went wrong. Please try again.');
+      return;
     }
-    return 'Something went wrong. Please try again.';
+
+    const fields: Record<string, string> = {};
+    const general: string[] = [];
+
+    for (const key of Object.keys(e.error)) {
+      const value = e.error[key];
+      const msg = Array.isArray(value) ? value.map(String).join(' ') : String(value);
+      if (ItemFormComponent.FIELD_KEYS.includes(key)) {
+        fields[key] = msg;
+      } else {
+        general.push(msg);
+      }
+    }
+
+    this.fieldErrors.set(fields);
+    this.errorMessage.set(general.join(' '));
   }
 }

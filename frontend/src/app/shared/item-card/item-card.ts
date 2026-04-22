@@ -12,6 +12,7 @@ import { Item } from '../../models/item.model';
 })
 export class ItemCardComponent {
   @Input({ required: true }) item!: Item;
+  @Input() priority = false;
 
   get truncatedDescription(): string {
     if (this.item.description.length <= 100) {

@@ -10,7 +10,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--spacing-lg) var(--spacing-md);
-  background: var(--color-bg-light);
+  background: var(--color-bg-white);
 }
 
 .auth-card {
@@ -33,12 +33,7 @@
 
 .logo-badge {
   align-self: flex-start;
-  padding: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
-  background: var(--color-bg-white);
-  border-radius: var(--border-radius-xl);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-border);
 }
 
 .logo-img {
@@ -106,6 +101,10 @@
   background: var(--color-primary);
   width: 100%;
   transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
 }
 
 .auth-button:hover {
@@ -116,6 +115,7 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
 
 /* Footer */
 .auth-footer {

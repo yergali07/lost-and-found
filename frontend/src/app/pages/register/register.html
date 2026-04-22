@@ -61,7 +61,14 @@
         </div>
 
         <div class="auth-actions">
-          <button class="auth-button" type="submit">Register</button>
+          <button class="auth-button" type="submit" [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="btn-spinner" aria-hidden="true"></span>
+              <span>Creating account…</span>
+            } @else {
+              <span>Register</span>
+            }
+          </button>
         </div>
       </form>
 

@@ -42,7 +42,12 @@
                 (click)="onMarkResolved(item.id)"
                 [disabled]="isResolveBusy(item.id)"
               >
-                {{ isResolveBusy(item.id) ? 'Saving...' : 'Resolved' }}
+                @if (isResolveBusy(item.id)) {
+                  <span class="btn-spinner" aria-hidden="true"></span>
+                  <span>Saving…</span>
+                } @else {
+                  <span>Resolved</span>
+                }
               </button>
             }
             <button type="button" (click)="toggleClaims(item.id)">
@@ -73,14 +78,20 @@
                             (click)="onApprove(claim.id)"
                             [disabled]="isClaimBusy(claim.id)"
                           >
-                            Approve
+                            @if (isClaimBusy(claim.id)) {
+                              <span class="btn-spinner" aria-hidden="true"></span>
+                            }
+                            <span>Approve</span>
                           </button>
                           <button
                             type="button"
                             (click)="onReject(claim.id)"
                             [disabled]="isClaimBusy(claim.id)"
                           >
-                            Reject
+                            @if (isClaimBusy(claim.id)) {
+                              <span class="btn-spinner" aria-hidden="true"></span>
+                            }
+                            <span>Reject</span>
                           </button>
                         </div>
                       }

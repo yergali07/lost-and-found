@@ -5,6 +5,16 @@
   background: #fff;
   display: flex;
   flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.item-card:hover {
+  border-color: #1565c0;
+  transform: translateY(-1px);
 }
 
 .item-card__image {
@@ -80,16 +90,4 @@
   margin: 0;
   font-size: 14px;
   color: #444;
-}
-
-.item-card__link {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1565c0;
-  text-decoration: none;
-  margin-top: 4px;
-}
-
-.item-card__link:hover {
-  text-decoration: underline;
 }

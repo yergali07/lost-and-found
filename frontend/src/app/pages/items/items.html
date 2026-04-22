@@ -43,8 +43,8 @@
     <p class="items-page__status">No items found.</p>
   } @else {
     <div class="items-page__grid">
-      @for (item of items(); track item.id) {
-        <app-item-card [item]="item" />
+      @for (item of items(); track item.id; let i = $index) {
+        <app-item-card [item]="item" [priority]="i === 0" />
       }
     </div>
 

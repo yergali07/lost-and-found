@@ -5,8 +5,8 @@
 
       <h1 class="form-title">{{ isEditMode ? 'Edit Item' : 'Create Item' }}</h1>
 
-      @if (errorMessage) {
-        <div class="form-error">{{ errorMessage }}</div>
+      @if (errorMessage()) {
+        <div class="form-error">{{ errorMessage() }}</div>
       }
 
       <form class="item-form" (ngSubmit)="onSubmit()">
@@ -15,23 +15,33 @@
           <input
             id="title"
             type="text"
-            [(ngModel)]="title"
+            [ngModel]="title()"
+            (ngModelChange)="title.set($event)"
             name="title"
             required
             placeholder="What was lost or found?"
+            [class.form-field__input--invalid]="fieldError('title')"
           />
+          @if (fieldError('title')) {
+            <p class="field-error">{{ fieldError('title') }}</p>
+          }
         </div>
 
         <div class="form-field">
           <label for="description">Description</label>
           <textarea
             id="description"
-            [(ngModel)]="description"
+            [ngModel]="description()"
+            (ngModelChange)="description.set($event)"
             name="description"
             rows="4"
             required
             placeholder="Describe the item in detail"
+            [class.form-field__input--invalid]="fieldError('description')"
           ></textarea>
+          @if (fieldError('description')) {
+            <p class="field-error">{{ fieldError('description') }}</p>
+          }
         </div>
 
         <div class="form-field">
@@ -39,35 +49,65 @@
           <input
             id="location"
             type="text"
-            [(ngModel)]="location"
+            [ngModel]="location()"
+            (ngModelChange)="location.set($event)"
             name="location"
             required
             placeholder="Where was it lost or found?"
+            [class.form-field__input--invalid]="fieldError('location')"
           />
+          @if (fieldError('location')) {
+            <p class="field-error">{{ fieldError('location') }}</p>
+          }
         </div>
 
         <div class="form-field">
           <label for="category">Category</label>
-          <select id="category" [(ngModel)]="category" name="category" required>
+          <select
+            id="category"
+            [ngModel]="category()"
+            (ngModelChange)="category.set($event)"
+            name="category"
+            required
+            [class.form-field__input--invalid]="fieldError('category')"
+          >
             <option [ngValue]="null" disabled>Select a category</option>
-            @for (cat of categories; track cat.id) {
+            @for (cat of categories(); track cat.id) {
               <option [ngValue]="cat.id">{{ cat.name }}</option>
             }
           </select>
+          @if (fieldError('category')) {
+            <p class="field-error">{{ fieldError('category') }}</p>
+          }
         </div>
 
         <div class="form-field">
           <label>Type</label>
           <div class="radio-group">
             <label class="radio-label">
-              <input type="radio" [(ngModel)]="itemType" name="itemType" value="lost" />
+              <input
+                type="radio"
+                [ngModel]="itemType()"
+                (ngModelChange)="itemType.set($event)"
+                name="itemType"
+                value="lost"
+              />
               Lost
             </label>
             <label class="radio-label">
-              <input type="radio" [(ngModel)]="itemType" name="itemType" value="found" />
+              <input
+                type="radio"
+                [ngModel]="itemType()"
+                (ngModelChange)="itemType.set($event)"
+                name="itemType"
+                value="found"
+              />
               Found
             </label>
           </div>
+          @if (fieldError('item_type')) {
+            <p class="field-error">{{ fieldError('item_type') }}</p>
+          }
         </div>
 
         <div class="form-field">
@@ -75,10 +115,15 @@
           <input
             id="dateLostOrFound"
             type="date"
-            [(ngModel)]="dateLostOrFound"
+            [ngModel]="dateLostOrFound()"
+            (ngModelChange)="dateLostOrFound.set($event)"
             name="dateLostOrFound"
             required
+            [class.form-field__input--invalid]="fieldError('date_lost_or_found')"
           />
+          @if (fieldError('date_lost_or_found')) {
+            <p class="field-error">{{ fieldError('date_lost_or_found') }}</p>
+          }
         </div>
 
         <div class="form-field">
@@ -90,17 +135,25 @@
             accept="image/*"
             (change)="onFileSelected($event)"
           />
-          @if (imagePreview) {
-            <img [src]="imagePreview" alt="Preview" class="image-preview" />
+          @if (imagePreview()) {
+            <img [src]="imagePreview()" alt="Preview" class="image-preview" />
             <button type="button" class="image-clear-button" (click)="onClearImage(imageInput)">
               Remove image
             </button>
           }
+          @if (fieldError('image')) {
+            <p class="field-error">{{ fieldError('image') }}</p>
+          }
         </div>
 
         <div class="form-actions">
-          <button class="form-button" type="submit" [disabled]="loading">
-            {{ isEditMode ? 'Save Changes' : 'Create Item' }}
+          <button class="form-button" type="submit" [disabled]="loading()">
+            @if (loading()) {
+              <span class="btn-spinner" aria-hidden="true"></span>
+              <span>{{ isEditMode ? 'Saving…' : 'Creating…' }}</span>
+            } @else {
+              <span>{{ isEditMode ? 'Save Changes' : 'Create Item' }}</span>
+            }
           </button>
         </div>
       </form>

@@ -30,6 +30,7 @@ export class ItemDetailComponent implements OnInit {
   protected readonly loading = signal(true);
   protected readonly isLoggedIn = signal(false);
   protected readonly hasPendingClaim = signal(false);
+  protected readonly deleting = signal(false);
 
   claimMessage = '';
   claimSubmitting = false;
@@ -110,16 +111,20 @@ export class ItemDetailComponent implements OnInit {
 
   onDelete(): void {
     const item = this.item();
-    if (!item || !confirm('Are you sure you want to delete this item?')) {
+    if (!item || this.deleting() || !confirm('Are you sure you want to delete this item?')) {
       return;
     }
 
-    this.itemService.deleteItem(item.id).subscribe({
-      next: () => this.router.navigate(['/items']),
-      error: () => {
-        this.errorMessage.set('Failed to delete item.');
-      },
-    });
+    this.deleting.set(true);
+    this.itemService
+      .deleteItem(item.id)
+      .pipe(finalize(() => this.deleting.set(false)))
+      .subscribe({
+        next: () => this.router.navigate(['/items']),
+        error: () => {
+          this.errorMessage.set('Failed to delete item.');
+        },
+      });
   }
 
   private formatClaimError(err: unknown): string {

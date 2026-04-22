@@ -1,6 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { finalize } from 'rxjs/operators';
 
 import { AuthService } from '../../core/services/auth.service';
 import { RegisterRequest } from '../../models/auth.model';
@@ -21,11 +22,16 @@ export class RegisterComponent {
   password = '';
   passwordConfirm = '';
   errorMessage = '';
+  readonly submitting = signal(false);
 
   readonly logoSrc = '/kbtu-logo.png';
 
   onSubmit(): void {
+    if (this.submitting()) {
+      return;
+    }
     this.errorMessage = '';
+    this.submitting.set(true);
 
     const data: RegisterRequest = {
       username: this.username,
@@ -33,14 +39,17 @@ export class RegisterComponent {
       password: this.password,
       password_confirm: this.passwordConfirm,
     };
-    this.authService.register(data).subscribe({
-      next: () => {
-        this.router.navigate(['/login']);
-      },
-      error: (err: unknown) => {
-        this.errorMessage = this.formatRegisterError(err);
-      },
-    });
+    this.authService
+      .register(data)
+      .pipe(finalize(() => this.submitting.set(false)))
+      .subscribe({
+        next: () => {
+          this.router.navigate(['/login']);
+        },
+        error: (err: unknown) => {
+          this.errorMessage = this.formatRegisterError(err);
+        },
+      });
   }
 
   private formatRegisterError(err: unknown): string {

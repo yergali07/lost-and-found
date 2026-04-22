@@ -3,13 +3,7 @@
     <div class="navbar__container">
       <a routerLink="/items" class="navbar__brand">Lost &amp; Found</a>
 
-      <div class="navbar__links">
-        <a routerLink="/items" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
-          >Items</a
-        >
-      </div>
-
-      <div class="navbar__auth">
+<div class="navbar__auth">
         @if (loggedIn()) {
           @if (me(); as u) {
             <a routerLink="/profile" routerLinkActive="active" class="navbar__username">{{

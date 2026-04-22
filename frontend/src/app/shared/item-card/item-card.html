@@ -1,6 +1,12 @@
-<div class="item-card">
+<a [routerLink]="['/items', item.id]" class="item-card">
   @if (item.image) {
-    <img [src]="item.image" [alt]="item.title" class="item-card__image" loading="lazy" />
+    <img
+      [src]="item.image"
+      [alt]="item.title"
+      class="item-card__image"
+      [attr.loading]="priority ? 'eager' : 'lazy'"
+      [attr.fetchpriority]="priority ? 'high' : 'auto'"
+    />
   }
 
   <div class="item-card__body">
@@ -34,7 +40,5 @@
     </p>
 
     <p class="item-card__description">{{ truncatedDescription }}</p>
-
-    <a [routerLink]="['/items', item.id]" class="item-card__link">Details →</a>
   </div>
-</div>
+</a>

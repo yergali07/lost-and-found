@@ -103,6 +103,15 @@
   text-decoration: none;
   font-size: 13px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.my-item-card__actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .claims-box {
@@ -156,6 +165,15 @@
   color: #fff;
   cursor: pointer;
   font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.claim-row__actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .claim-row__actions button:first-child {

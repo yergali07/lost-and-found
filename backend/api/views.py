@@ -61,7 +61,7 @@ def login_view(request):
     user = authenticate(username=username, password=password)
     if user is None:
         return Response(
-            {'detail': 'Invalid credentials.'},
+            {'detail': 'Wrong username or password.'},
             status=status.HTTP_401_UNAUTHORIZED,
         )
 

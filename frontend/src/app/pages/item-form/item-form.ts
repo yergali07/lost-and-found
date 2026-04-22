@@ -1,6 +1,7 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { finalize } from 'rxjs/operators';
 
 import { CategoryService } from '../../core/services/category.service';
 import { ItemService } from '../../core/services/item.service';
@@ -21,9 +22,20 @@ export class ItemFormComponent implements OnInit {
 
   isEditMode = false;
   itemId: number | null = null;
-  categories: Category[] = [];
-  errorMessage = '';
-  loading = false;
+  readonly categories = signal<Category[]>([]);
+  readonly errorMessage = signal('');
+  readonly fieldErrors = signal<Record<string, string>>({});
+  readonly loading = signal(false);
+
+  private static readonly FIELD_KEYS = [
+    'title',
+    'description',
+    'location',
+    'category',
+    'item_type',
+    'date_lost_or_found',
+    'image',
+  ];
 
   title = '';
   description = '';
@@ -37,12 +49,8 @@ export class ItemFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.categoryService.getCategories().subscribe({
-      next: (categories) => {
-        this.categories = categories;
-      },
-      error: () => {
-        this.errorMessage = 'Failed to load categories.';
-      },
+      next: (categories) => this.categories.set(categories),
+      error: () => this.errorMessage.set('Failed to load categories.'),
     });
 
     const idParam = this.route.snapshot.paramMap.get('id');
@@ -54,8 +62,12 @@ export class ItemFormComponent implements OnInit {
   }
 
   onSubmit(): void {
-    this.errorMessage = '';
-    this.loading = true;
+    if (this.loading()) {
+      return;
+    }
+    this.errorMessage.set('');
+    this.fieldErrors.set({});
+    this.loading.set(true);
 
     const data: ItemCreateRequest = {
       title: this.title,
@@ -72,15 +84,18 @@ export class ItemFormComponent implements OnInit {
       ? this.itemService.updateItem(this.itemId!, data)
       : this.itemService.createItem(data);
 
-    request.subscribe({
+    request.pipe(finalize(() => this.loading.set(false))).subscribe({
       next: () => {
         this.router.navigate(['/items']);
       },
       error: (err: unknown) => {
-        this.loading = false;
-        this.errorMessage = this.formatError(err);
+        this.applyError(err);
       },
     });
+  }
+
+  fieldError(key: string): string {
+    return this.fieldErrors()[key] ?? '';
   }
 
   private loadItem(id: number): void {
@@ -96,9 +111,7 @@ export class ItemFormComponent implements OnInit {
           this.imagePreview = item.image;
         }
       },
-      error: () => {
-        this.errorMessage = 'Failed to load item.';
-      },
+      error: () => this.errorMessage.set('Failed to load item.'),
     });
   }
 
@@ -122,20 +135,27 @@ export class ItemFormComponent implements OnInit {
     fileInput.value = '';
   }
 
-  private formatError(err: unknown): string {
+  private applyError(err: unknown): void {
     const e = err as { error?: Record<string, unknown> };
-    if (e.error && typeof e.error === 'object') {
-      const messages: string[] = [];
-      for (const key of Object.keys(e.error)) {
-        const value = e.error[key];
-        if (Array.isArray(value)) {
-          messages.push(...value.map(String));
-        } else {
-          messages.push(String(value));
-        }
-      }
-      return messages.join(' ');
+    if (!e.error || typeof e.error !== 'object') {
+      this.errorMessage.set('Something went wrong. Please try again.');
+      return;
     }
-    return 'Something went wrong. Please try again.';
+
+    const fields: Record<string, string> = {};
+    const general: string[] = [];
+
+    for (const key of Object.keys(e.error)) {
+      const value = e.error[key];
+      const msg = Array.isArray(value) ? value.map(String).join(' ') : String(value);
+      if (ItemFormComponent.FIELD_KEYS.includes(key)) {
+        fields[key] = msg;
+      } else {
+        general.push(msg);
+      }
+    }
+
+    this.fieldErrors.set(fields);
+    this.errorMessage.set(general.join(' '));
   }
 }

@@ -1,6 +1,6 @@
 <div class="my-items">
   <header class="my-items__header">
-    <a routerLink="/items" class="my-items__back">&larr; Back to items</a>
+    <a routerLink="/profile" class="my-items__back">← Back to profile</a>
     <h1>My Items</h1>
   </header>
 
@@ -22,35 +22,31 @@
         <article class="my-item-card">
           <div class="my-item-card__head">
             <h2>{{ item.title }}</h2>
-            <span class="badge" [class.badge--active]="item.status === 'active'"
-                  [class.badge--claimed]="item.status === 'claimed'"
-                  [class.badge--resolved]="item.status === 'resolved'">
+            <span class="badge" [class.badge--active]="item.status === 'active'">
               {{ item.status | titlecase }}
             </span>
           </div>
 
           <p class="my-item-card__meta">
-            {{ item.item_type | titlecase }} · {{ item.category_name }} · {{ item.created_at | date: 'medium' }}
+            {{ item.item_type | titlecase }} · {{ item.category_name }} ·
+            {{ item.created_at | date: 'medium' }}
           </p>
 
           <p class="my-item-card__description">{{ item.description }}</p>
 
           <div class="my-item-card__actions">
-            <a [routerLink]="['/items', item.id]" class="my-item-action my-item-action--secondary">View</a>
+            <a [routerLink]="['/items', item.id]">Open</a>
             @if (item.status !== 'resolved') {
               <button
                 type="button"
                 (click)="onMarkResolved(item.id)"
                 [disabled]="isResolveBusy(item.id)"
-                class="my-item-action my-item-action--primary"
               >
-                {{ isResolveBusy(item.id) ? 'Saving...' : '✓ Mark Resolved' }}
+                {{ isResolveBusy(item.id) ? 'Saving...' : 'Resolved' }}
               </button>
             }
-            <button type="button" 
-                    (click)="toggleClaims(item.id)"
-                    class="my-item-action my-item-action--outline">
-              {{ isExpanded(item.id) ? '▼ Hide claims' : '▶ Show claims' }}
+            <button type="button" (click)="toggleClaims(item.id)">
+              {{ isExpanded(item.id) ? 'Hide claims' : 'Show claims' }}
               ({{ getClaimsForItem(item.id).length }})
             </button>
           </div>
@@ -64,31 +60,27 @@
               } @else {
                 @for (claim of getClaimsForItem(item.id); track claim.id) {
                   <div class="claim-row">
-                    <div class="claim-row__left">
-                      <strong class="claim-row__username">{{ claim.claimant_username }}</strong>
-                      <p class="claim-row__message">{{ claim.message }}</p>
+                    <div>
+                      <strong>{{ claim.claimant_username }}</strong>
+                      <p>{{ claim.message }}</p>
                     </div>
                     <div class="claim-row__right">
-                      <span class="claim-status" [class]="'claim-status--' + claim.status">
-                        {{ claim.status | titlecase }}
-                      </span>
+                      <span class="claim-status">{{ claim.status | titlecase }}</span>
                       @if (claim.status === 'pending') {
                         <div class="claim-row__actions">
                           <button
                             type="button"
                             (click)="onApprove(claim.id)"
                             [disabled]="isClaimBusy(claim.id)"
-                            class="claim-btn claim-btn--approve"
                           >
-                            {{ isClaimBusy(claim.id) ? '...' : '✓ Approve' }}
+                            Approve
                           </button>
                           <button
                             type="button"
                             (click)="onReject(claim.id)"
                             [disabled]="isClaimBusy(claim.id)"
-                            class="claim-btn claim-btn--reject"
                           >
-                            {{ isClaimBusy(claim.id) ? '...' : '✗ Reject' }}
+                            Reject
                           </button>
                         </div>
                       }
@@ -103,333 +95,3 @@
     </div>
   }
 </div>
-
-<style>
-  .my-items {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: var(--spacing-lg) var(--spacing-md);
-  }
-
-  /* Header */
-  .my-items__header {
-    margin-bottom: var(--spacing-lg);
-  }
-
-  .my-items__header h1 {
-    margin: var(--spacing-sm) 0 0;
-    font-size: var(--font-size-2xl);
-  }
-
-  .my-items__back {
-    display: inline-block;
-    font-size: var(--font-size-base);
-    color: var(--color-primary);
-    text-decoration: none;
-    margin-bottom: var(--spacing-md);
-    transition: color var(--transition-fast);
-  }
-
-  .my-items__back:hover {
-    color: var(--color-primary-dark);
-    text-decoration: underline;
-  }
-
-  /* Status and error messages */
-  .my-items__error {
-    background: #fee2e2;
-    color: var(--color-error);
-    padding: var(--spacing-md);
-    border-radius: var(--border-radius-md);
-    border-left: 4px solid var(--color-error);
-    margin-bottom: var(--spacing-lg);
-  }
-
-  .my-items__message {
-    background: #dcfce7;
-    color: var(--color-active);
-    padding: var(--spacing-md);
-    border-radius: var(--border-radius-md);
-    border-left: 4px solid var(--color-active);
-    margin-bottom: var(--spacing-lg);
-  }
-
-  .my-items__status {
-    text-align: center;
-    color: var(--color-dark-secondary);
-    padding: var(--spacing-xl);
-    font-size: var(--font-size-lg);
-  }
-
-  /* Items list */
-  .my-items__list {
-    display: grid;
-    gap: var(--spacing-lg);
-  }
-
-  /* Item card */
-  .my-item-card {
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-lg);
-    padding: var(--spacing-lg);
-    background: var(--color-bg-white);
-    box-shadow: var(--shadow-sm);
-    transition: box-shadow var(--transition-normal);
-  }
-
-  .my-item-card:hover {
-    box-shadow: var(--shadow-md);
-  }
-
-  .my-item-card__head {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: var(--spacing-md);
-    margin-bottom: var(--spacing-md);
-  }
-
-  .my-item-card__head h2 {
-    font-size: var(--font-size-xl);
-    font-weight: var(--font-weight-semibold);
-    flex: 1;
-    margin: 0;
-  }
-
-  .my-item-card__meta {
-    color: var(--color-dark-secondary);
-    font-size: var(--font-size-sm);
-    margin-bottom: var(--spacing-sm);
-  }
-
-  .my-item-card__description {
-    font-size: var(--font-size-base);
-    line-height: var(--line-height-relaxed);
-    margin-bottom: var(--spacing-md);
-  }
-
-  /* Actions */
-  .my-item-card__actions {
-    display: flex;
-    gap: var(--spacing-sm);
-    flex-wrap: wrap;
-    margin-bottom: var(--spacing-lg);
-  }
-
-  .my-item-action {
-    padding: 6px 12px;
-    border-radius: var(--border-radius-md);
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
-    cursor: pointer;
-    border: none;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    transition: all var(--transition-fast);
-  }
-
-  .my-item-action--primary {
-    background: var(--color-primary);
-    color: white;
-  }
-
-  .my-item-action--primary:hover {
-    background: var(--color-primary-dark);
-  }
-
-  .my-item-action--secondary {
-    background: var(--color-active);
-    color: white;
-  }
-
-  .my-item-action--secondary:hover {
-    background: #15803d;
-  }
-
-  .my-item-action--outline {
-    background: transparent;
-    color: var(--color-primary);
-    border: 1px solid var(--color-primary);
-  }
-
-  .my-item-action--outline:hover {
-    background: var(--color-primary-light);
-  }
-
-  .my-item-action:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  /* Claims section */
-  .claims-box {
-    margin-top: var(--spacing-lg);
-    padding-top: var(--spacing-md);
-    border-top: 1px solid var(--color-border);
-    display: grid;
-    gap: var(--spacing-md);
-  }
-
-  .claims-box__empty {
-    color: var(--color-dark-secondary);
-    font-size: var(--font-size-sm);
-    margin: 0;
-  }
-
-  /* Claim row */
-  .claim-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: var(--spacing-md);
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-md);
-    padding: var(--spacing-md);
-    background: var(--color-bg-light);
-  }
-
-  .claim-row__left {
-    flex: 1;
-  }
-
-  .claim-row__username {
-    display: block;
-    font-weight: var(--font-weight-semibold);
-    margin-bottom: var(--spacing-xs);
-  }
-
-  .claim-row__message {
-    font-size: var(--font-size-sm);
-    color: var(--color-dark-secondary);
-    margin: 0;
-    line-height: var(--line-height-normal);
-  }
-
-  .claim-row__right {
-    text-align: right;
-    display: grid;
-    gap: var(--spacing-sm);
-    align-items: center;
-    white-space: nowrap;
-  }
-
-  /* Claim status badge */
-  .claim-status {
-    display: inline-block;
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
-    padding: 2px 8px;
-    border-radius: var(--border-radius-md);
-    background: var(--color-border);
-    color: var(--color-dark);
-  }
-
-  .claim-status--pending {
-    background: #fef3c7;
-    color: #92400e;
-  }
-
-  .claim-status--approved {
-    background: #dcfce7;
-    color: #166534;
-  }
-
-  .claim-status--rejected {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-
-  /* Claim actions */
-  .claim-row__actions {
-    display: flex;
-    gap: var(--spacing-xs);
-  }
-
-  .claim-btn {
-    border: none;
-    border-radius: var(--border-radius-md);
-    padding: 4px 8px;
-    color: white;
-    cursor: pointer;
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
-    transition: all var(--transition-fast);
-  }
-
-  .claim-btn--approve {
-    background: var(--color-active);
-  }
-
-  .claim-btn--approve:hover {
-    background: #15803d;
-  }
-
-  .claim-btn--reject {
-    background: var(--color-error);
-  }
-
-  .claim-btn--reject:hover {
-    background: #b91c1c;
-  }
-
-  .claim-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  /* Responsive */
-  @media (max-width: 768px) {
-    .my-items {
-      padding: var(--spacing-lg) var(--spacing-md);
-    }
-
-    .my-item-card__head {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .my-item-card__actions {
-      flex-direction: column;
-    }
-
-    .my-item-action {
-      width: 100%;
-      justify-content: center;
-    }
-
-    .claim-row {
-      flex-direction: column;
-    }
-
-    .claim-row__right {
-      text-align: left;
-      width: 100%;
-    }
-
-    .claim-row__actions {
-      width: 100%;
-      gap: var(--spacing-sm);
-    }
-
-    .claim-btn {
-      flex: 1;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .my-items {
-      padding: var(--spacing-md) var(--spacing-sm);
-    }
-
-    .my-item-card {
-      padding: var(--spacing-md);
-    }
-
-    .my-item-card__head h2 {
-      font-size: var(--font-size-lg);
-    }
-  }
-</style>
-

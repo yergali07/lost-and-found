@@ -1,0 +1,174 @@
+.detail-shell {
+  max-width: 720px;
+  margin: 40px auto;
+  padding: 0 16px;
+}
+
+.detail-back {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: #1565c0;
+  text-decoration: none;
+}
+
+.detail-back:hover {
+  text-decoration: underline;
+}
+
+.detail-error {
+  color: #b00020;
+}
+
+.detail-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 24px;
+  background: #fff;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detail-title {
+  margin: 0;
+}
+
+.detail-badges {
+  display: flex;
+  gap: 8px;
+}
+
+.detail-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  font-weight: 500;
+  color: #fff;
+}
+
+.detail-badge--lost {
+  background-color: #d32f2f;
+}
+
+.detail-badge--found {
+  background-color: #388e3c;
+}
+
+.detail-badge--active {
+  background-color: #1976d2;
+}
+
+.detail-badge--claimed {
+  background-color: #f57c00;
+}
+
+.detail-badge--resolved {
+  background-color: #388e3c;
+}
+
+.detail-image {
+  width: 100%;
+  max-height: 400px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.detail-description {
+  margin-top: 16px;
+  line-height: 1.6;
+}
+
+.detail-meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 16px;
+  margin-top: 16px;
+  font-size: 0.95em;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+}
+
+.detail-action-button {
+  padding: 8px 20px;
+  background: #1976d2;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.95em;
+  border: none;
+  cursor: pointer;
+}
+
+.detail-action-button--danger {
+  background: #d32f2f;
+}
+
+.detail-claim {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+}
+
+.detail-claim__title {
+  margin: 0 0 16px;
+}
+
+.detail-claim__success {
+  margin: 0 0 12px;
+  color: #388e3c;
+}
+
+.detail-claim__error {
+  margin: 0 0 12px;
+  color: #d32f2f;
+}
+
+.detail-claim__form {
+  display: grid;
+  gap: 12px;
+}
+
+.detail-claim__field {
+  display: grid;
+  gap: 6px;
+}
+
+.detail-claim__label {
+  font-weight: 500;
+}
+
+.detail-claim__textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  resize: vertical;
+  font: inherit;
+}
+
+.detail-claim__submit {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #1976d2;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.detail-claim__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

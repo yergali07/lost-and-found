@@ -2,11 +2,17 @@
 
 from datetime import date
 
+from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.db import migrations
 
 
 def seed_demo_data(apps, schema_editor):
+    # Demo accounts ship with hardcoded passwords; never seed them outside of
+    # local development.
+    if not settings.DEBUG:
+        return
+
     User = apps.get_model('auth', 'User')
     Category = apps.get_model('api', 'Category')
     Item = apps.get_model('api', 'Item')

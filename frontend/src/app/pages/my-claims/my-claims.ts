@@ -1,17 +1,20 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
-import { ClaimService, ClaimResponse } from '../../core/services/claim.service';
+import { ClaimService } from '../../core/services/claim.service';
+import { Claim } from '../../models/claim.model';
 
 @Component({
   selector: 'app-my-claims',
   standalone: true,
+  imports: [RouterLink],
   templateUrl: './my-claims.html',
   styleUrl: './my-claims.css',
 })
 export class MyClaimsComponent implements OnInit {
   private claimService = inject(ClaimService);
 
-  claims = signal<ClaimResponse[]>([]);
+  claims = signal<Claim[]>([]);
   loading = signal(false);
   errorMessage = signal('');
 

@@ -84,6 +84,7 @@
         <div class="form-field">
           <label for="image">Image</label>
           <input
+            #imageInput
             id="image"
             type="file"
             accept="image/*"
@@ -91,6 +92,9 @@
           />
           @if (imagePreview) {
             <img [src]="imagePreview" alt="Preview" class="image-preview" />
+            <button type="button" class="image-clear-button" (click)="onClearImage(imageInput)">
+              Remove image
+            </button>
           }
         </div>
 

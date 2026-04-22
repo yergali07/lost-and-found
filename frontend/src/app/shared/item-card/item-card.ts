@@ -8,6 +8,7 @@ import { Item } from '../../models/item.model';
   standalone: true,
   imports: [RouterLink],
   templateUrl: './item-card.html',
+  styleUrl: './item-card.css',
 })
 export class ItemCardComponent {
   @Input({ required: true }) item!: Item;

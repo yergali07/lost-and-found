@@ -1,4 +1,4 @@
-import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 
@@ -18,15 +18,26 @@ export class NavbarComponent implements OnInit, OnDestroy {
   private sub = new Subscription();
 
   me = signal<User | null>(null);
+  loggedIn = signal(false);
   showNavbar = signal(true);
 
+  showLoginButton = computed(() => {
+    if (this.loggedIn()) return false;
+    const url = this.router.url;
+    return !(url.startsWith('/login') || url.startsWith('/register'));
+  });
+
   ngOnInit(): void {
-    this.updateForUrl(this.router.url);
+    this.refreshAuthState();
+    this.updateChromeForUrl(this.router.url);
 
     this.sub.add(
       this.router.events
         .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
-        .subscribe((e) => this.updateForUrl(e.urlAfterRedirects)),
+        .subscribe((e) => {
+          this.updateChromeForUrl(e.urlAfterRedirects);
+          this.refreshAuthState();
+        }),
     );
   }
 
@@ -34,29 +45,36 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.sub.unsubscribe();
   }
 
-  isLoggedIn(): boolean {
-    return this.authService.isLoggedIn();
-  }
-
-  showLoginButton(): boolean {
-    if (this.isLoggedIn()) return false;
-    const url = this.router.url;
-    return !(url.startsWith('/login') || url.startsWith('/register'));
-  }
-
   onLogout(): void {
     this.authService.logout().subscribe({
-      complete: () => this.router.navigate(['/login']),
-      error: () => this.router.navigate(['/login']),
+      complete: () => {
+        this.me.set(null);
+        this.loggedIn.set(false);
+        this.router.navigate(['/login']);
+      },
+      error: () => {
+        this.me.set(null);
+        this.loggedIn.set(false);
+        this.router.navigate(['/login']);
+      },
     });
   }
 
-  private updateForUrl(url: string): void {
+  private updateChromeForUrl(url: string): void {
     const onAuthPages = url.startsWith('/login') || url.startsWith('/register');
     this.showNavbar.set(!onAuthPages);
+  }
 
-    if (!this.authService.isLoggedIn()) {
+  private refreshAuthState(): void {
+    const isLoggedIn = this.authService.isLoggedIn();
+    this.loggedIn.set(isLoggedIn);
+
+    if (!isLoggedIn) {
       this.me.set(null);
+      return;
+    }
+
+    if (this.me() !== null) {
       return;
     }
 

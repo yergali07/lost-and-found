@@ -1,5 +1,8 @@
 <div class="my-claims-page">
-  <h1>My Claims</h1>
+  <header class="my-claims-page__header">
+    <a routerLink="/profile" class="my-claims-page__back">← Back to profile</a>
+    <h1>My Claims</h1>
+  </header>
 
   @if (errorMessage()) {
     <p class="error">{{ errorMessage() }}</p>

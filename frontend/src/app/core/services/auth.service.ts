@@ -1,54 +1,65 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, finalize, of, tap } from 'rxjs';
 
+import { environment } from '../../../environments/environment';
 import { AuthTokens, LoginRequest, RegisterRequest, User } from '../../models/auth.model';
 
-const API_URL = 'http://127.0.0.1:8000/api/auth';
+const AUTH_URL = `${environment.apiBaseUrl}/auth`;
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpClient);
 
   login(data: LoginRequest): Observable<AuthTokens> {
-    return this.http.post<AuthTokens>(`${API_URL}/login/`, data).pipe(
-      tap((tokens) => this.storeTokens(tokens)),
-    );
+    return this.http
+      .post<AuthTokens>(`${AUTH_URL}/login/`, data)
+      .pipe(tap((tokens) => this.storeTokens(tokens)));
   }
 
   register(data: RegisterRequest): Observable<AuthTokens> {
-    return this.http.post<AuthTokens>(`${API_URL}/register/`, data);
+    return this.http.post<AuthTokens>(`${AUTH_URL}/register/`, data);
   }
 
-  logout(): Observable<{ detail: string }> {
+  logout(): Observable<{ detail: string } | null> {
     const refresh = localStorage.getItem('refresh_token');
+    if (!refresh) {
+      this.clearTokens();
+      return of(null);
+    }
     return this.http
-      .post<{ detail: string }>(`${API_URL}/logout/`, { refresh })
-      .pipe(tap(() => this.clearTokens()));
+      .post<{ detail: string }>(`${AUTH_URL}/logout/`, { refresh })
+      .pipe(finalize(() => this.clearTokens()));
   }
 
   getAccessToken(): string | null {
     return localStorage.getItem('access_token');
   }
 
+  getRefreshToken(): string | null {
+    return localStorage.getItem('refresh_token');
+  }
+
   refreshToken(): Observable<AuthTokens> {
-    const refresh = localStorage.getItem('refresh_token');
-    return this.http.post<AuthTokens>(`${API_URL}/refresh/`, { refresh }).pipe(
-      tap((tokens) => this.storeTokens(tokens)),
-    );
+    const refresh = this.getRefreshToken();
+    return this.http
+      .post<AuthTokens>(`${AUTH_URL}/refresh/`, { refresh })
+      .pipe(tap((tokens) => this.storeTokens(tokens)));
   }
 
   getMe(): Observable<User> {
-    return this.http.get<User>(`${API_URL}/me/`);
+    return this.http.get<User>(`${AUTH_URL}/me/`);
   }
 
   isLoggedIn(): boolean {
     return !!this.getAccessToken();
   }
 
-  private storeTokens(tokens: AuthTokens): void {
+  storeTokens(tokens: AuthTokens): void {
     localStorage.setItem('access_token', tokens.access);
-    localStorage.setItem('refresh_token', tokens.refresh);
+    if (tokens.refresh) {
+      localStorage.setItem('refresh_token', tokens.refresh);
+    }
   }
 
   clearTokens(): void {

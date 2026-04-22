@@ -1,17 +1,23 @@
 <div class="item-card">
   @if (item.image) {
-    <img [src]="item.image" [alt]="item.title" class="item-card__image" />
+    <img [src]="item.image" [alt]="item.title" class="item-card__image" loading="lazy" />
   }
 
   <div class="item-card__body">
     <div class="item-card__badges">
-      <span class="badge" [class.badge--lost]="item.item_type === 'lost'"
-            [class.badge--found]="item.item_type === 'found'">
+      <span
+        class="badge"
+        [class.badge--lost]="item.item_type === 'lost'"
+        [class.badge--found]="item.item_type === 'found'"
+      >
         {{ item.item_type === 'lost' ? 'Lost' : 'Found' }}
       </span>
-      <span class="badge" [class.badge--active]="item.status === 'active'"
-            [class.badge--resolved]="item.status === 'resolved'"
-            [class.badge--claimed]="item.status === 'claimed'">
+      <span
+        class="badge"
+        [class.badge--active]="item.status === 'active'"
+        [class.badge--resolved]="item.status === 'resolved'"
+        [class.badge--claimed]="item.status === 'claimed'"
+      >
         {{ item.status }}
       </span>
     </div>
@@ -19,8 +25,12 @@
     <h3 class="item-card__title">{{ item.title }}</h3>
 
     <p class="item-card__meta">
-      <span class="item-card__category">{{ item.category_name }}</span>
-      <span class="item-card__location">{{ item.location }}</span>
+      <span class="item-card__category">
+        <span class="item-card__icon" aria-hidden="true">📁</span>{{ item.category_name }}
+      </span>
+      <span class="item-card__location">
+        <span class="item-card__icon" aria-hidden="true">📍</span>{{ item.location }}
+      </span>
     </p>
 
     <p class="item-card__description">{{ truncatedDescription }}</p>
@@ -28,90 +38,3 @@
     <a [routerLink]="['/items', item.id]" class="item-card__link">Details →</a>
   </div>
 </div>
-
-<style>
-  .item-card {
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-lg);
-    overflow: hidden;
-    background: var(--color-bg-white);
-    display: flex;
-    flex-direction: column;
-    transition: box-shadow var(--transition-normal);
-    box-shadow: var(--shadow-sm);
-  }
-
-  .item-card:hover {
-    box-shadow: var(--shadow-md);
-  }
-
-  .item-card__image {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-  }
-
-  .item-card__body {
-    padding: var(--spacing-md);
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
-    flex: 1;
-  }
-
-  .item-card__badges {
-    display: flex;
-    gap: var(--spacing-sm);
-    flex-wrap: wrap;
-  }
-
-  .item-card__title {
-    font-size: var(--font-size-xl);
-    font-weight: var(--font-weight-semibold);
-    line-height: var(--line-height-tight);
-    margin-top: var(--spacing-sm);
-  }
-
-  .item-card__meta {
-    font-size: var(--font-size-sm);
-    color: var(--color-dark-secondary);
-    display: flex;
-    gap: var(--spacing-md);
-    flex-wrap: wrap;
-  }
-
-  .item-card__meta span::before {
-    margin-right: var(--spacing-xs);
-  }
-
-  .item-card__category::before {
-    content: '📁';
-  }
-
-  .item-card__location::before {
-    content: '📍';
-  }
-
-  .item-card__description {
-    font-size: var(--font-size-base);
-    color: var(--color-dark-secondary);
-    line-height: var(--line-height-relaxed);
-    margin: var(--spacing-sm) 0;
-    flex: 1;
-  }
-
-  .item-card__link {
-    font-size: var(--font-size-base);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-primary);
-    text-decoration: none;
-    margin-top: auto;
-    transition: color var(--transition-fast);
-  }
-
-  .item-card__link:hover {
-    color: var(--color-primary-dark);
-    text-decoration: underline;
-  }
-</style>
-

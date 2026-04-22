@@ -1,0 +1,48 @@
+<div class="profile-page">
+  @if (errorMessage()) {
+    <p class="profile-page__error">{{ errorMessage() }}</p>
+  }
+
+  @if (me(); as user) {
+    <header class="profile-header">
+      <div class="profile-avatar" aria-hidden="true">
+        {{ user.username.charAt(0).toUpperCase() }}
+      </div>
+      <div>
+        <h1 class="profile-name">{{ fullName() }}</h1>
+        <p class="profile-meta">{{ '@' + user.username }}</p>
+        @if (user.email) {
+          <p class="profile-meta">{{ user.email }}</p>
+        }
+      </div>
+    </header>
+
+    <div class="profile-grid">
+      <a routerLink="/my-items" class="profile-card">
+        <span class="profile-card__title">My items</span>
+        <span class="profile-card__count">
+          @if (itemsCount() !== null) {
+            {{ itemsCount() }}
+          } @else {
+            …
+          }
+        </span>
+        <span class="profile-card__hint">Posts you've created</span>
+      </a>
+
+      <a routerLink="/my-claims" class="profile-card">
+        <span class="profile-card__title">My claims</span>
+        <span class="profile-card__count">
+          @if (claimsCount() !== null) {
+            {{ claimsCount() }}
+          } @else {
+            …
+          }
+        </span>
+        <span class="profile-card__hint">Claims you've submitted</span>
+      </a>
+    </div>
+  } @else if (!errorMessage()) {
+    <p class="profile-page__status">Loading profile…</p>
+  }
+</div>

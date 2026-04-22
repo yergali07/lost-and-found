@@ -1,5 +1,4 @@
 <div class="items-page">
-
   <div class="items-page__toolbar">
     <input
       type="text"
@@ -17,21 +16,21 @@
       </select>
 
       <select [(ngModel)]="filterCategory" (ngModelChange)="onFilterChange()">
-        <option value="">All categories</option>
+        <option [ngValue]="''">All categories</option>
         @for (cat of categories(); track cat.id) {
-          <option [value]="cat.id">{{ cat.name }}</option>
+          <option [ngValue]="cat.id">{{ cat.name }}</option>
         }
       </select>
 
       <select [(ngModel)]="filterStatus" (ngModelChange)="onFilterChange()">
         <option value="">All statuses</option>
         <option value="active">Active</option>
+        <option value="claimed">Claimed</option>
         <option value="resolved">Resolved</option>
       </select>
     </div>
 
-    <a routerLink="/my-items" class="items-page__nav-btn items-page__nav-btn--secondary">My items</a>
-    <a routerLink="/create-item" class="items-page__nav-btn items-page__nav-btn--primary">+ New item</a>
+    <a routerLink="/create-item" class="items-page__create-btn">+ New item</a>
   </div>
 
   @if (errorMessage()) {
@@ -48,137 +47,17 @@
         <app-item-card [item]="item" />
       }
     </div>
+
+    @if (hasNext() || hasPrevious()) {
+      <div class="items-page__pagination">
+        <button type="button" (click)="previousPage()" [disabled]="!hasPrevious()">
+          ← Previous
+        </button>
+        <span class="items-page__pagination-info">
+          Page {{ page() }} · {{ totalCount() }} total
+        </span>
+        <button type="button" (click)="nextPage()" [disabled]="!hasNext()">Next →</button>
+      </div>
+    }
   }
 </div>
-
-<style>
-  .items-page {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: var(--spacing-lg) var(--spacing-md);
-  }
-
-  /* Toolbar with search and filters */
-  .items-page__toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--spacing-md);
-    align-items: center;
-    margin-bottom: var(--spacing-lg);
-    background: var(--color-bg-light);
-    padding: var(--spacing-md);
-    border-radius: var(--border-radius-lg);
-  }
-
-  .items-page__search {
-    flex: 1;
-    min-width: 200px;
-  }
-
-  .items-page__filters {
-    display: flex;
-    gap: var(--spacing-sm);
-    flex-wrap: wrap;
-  }
-
-  .items-page__filters select {
-    min-width: 140px;
-  }
-
-  /* Navigation buttons */
-  .items-page__nav-btn {
-    padding: var(--spacing-sm) var(--spacing-md);
-    border: 1px solid transparent;
-    border-radius: var(--border-radius-md);
-    font-size: var(--font-size-base);
-    font-weight: var(--font-weight-medium);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    text-decoration: none;
-    white-space: nowrap;
-    display: inline-block;
-  }
-
-  .items-page__nav-btn--primary {
-    background: var(--color-primary);
-    color: white;
-  }
-
-  .items-page__nav-btn--primary:hover {
-    background: var(--color-primary-dark);
-  }
-
-  .items-page__nav-btn--secondary {
-    background: white;
-    color: var(--color-primary);
-    border-color: var(--color-primary);
-  }
-
-  .items-page__nav-btn--secondary:hover {
-    background: var(--color-primary-light);
-  }
-
-  /* Status messages */
-  .items-page__status {
-    text-align: center;
-    padding: var(--spacing-xl);
-    color: var(--color-dark-secondary);
-    font-size: var(--font-size-lg);
-  }
-
-  .items-page__error {
-    background: #fee2e2;
-    color: var(--color-error);
-    padding: var(--spacing-md);
-    border-radius: var(--border-radius-md);
-    border-left: 4px solid var(--color-error);
-    margin-bottom: var(--spacing-lg);
-  }
-
-  /* Grid layout */
-  .items-page__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: var(--spacing-lg);
-  }
-
-  /* Responsive */
-  @media (max-width: 768px) {
-    .items-page__toolbar {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    .items-page__search {
-      min-width: unset;
-    }
-
-    .items-page__filters {
-      flex-direction: column;
-    }
-
-    .items-page__filters select {
-      min-width: unset;
-    }
-
-    .items-page__nav-btn {
-      width: 100%;
-      justify-content: center;
-    }
-
-    .items-page__grid {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .items-page {
-      padding: var(--spacing-md) var(--spacing-sm);
-    }
-
-    .items-page__toolbar {
-      padding: var(--spacing-sm);
-      gap: var(--spacing-sm);
-    }
-</style>
-

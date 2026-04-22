@@ -1,9 +1,12 @@
 from django.contrib.auth import authenticate
+from django.db import transaction
 from django.db.models import Q
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -19,8 +22,15 @@ from .serializers import (
 )
 
 
+class ItemPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([ScopedRateThrottle])
 def register_view(request):
     serializer = RegisterSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -32,8 +42,12 @@ def register_view(request):
     }, status=status.HTTP_201_CREATED)
 
 
+register_view.throttle_scope = 'auth'
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([ScopedRateThrottle])
 def login_view(request):
     username = request.data.get('username')
     password = request.data.get('password')
@@ -56,6 +70,9 @@ def login_view(request):
         'access': str(refresh.access_token),
         'refresh': str(refresh),
     }, status=status.HTTP_200_OK)
+
+
+login_view.throttle_scope = 'auth'
 
 
 @api_view(['POST'])
@@ -104,6 +121,8 @@ class CategoryListAPIView(APIView):
 
 
 class ItemListCreateAPIView(APIView):
+    pagination_class = ItemPagination
+
     def get_permissions(self):
         if self.request.method == 'POST':
             return [IsAuthenticated()]
@@ -130,8 +149,10 @@ class ItemListCreateAPIView(APIView):
                 Q(title__icontains=search) | Q(description__icontains=search)
             )
 
-        serializer = ItemSerializer(queryset, many=True, context={'request': request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        serializer = ItemSerializer(page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
         serializer = ItemSerializer(data=request.data, context={'request': request})
@@ -154,18 +175,14 @@ class ItemDetailAPIView(APIView):
     def get(self, request, pk):
         item = self.get_object(pk)
         if item is None:
-            return Response(
-                {'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
         serializer = ItemSerializer(item, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, pk):
         item = self.get_object(pk)
         if item is None:
-            return Response(
-                {'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
         serializer = ItemSerializer(item, data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -174,9 +191,7 @@ class ItemDetailAPIView(APIView):
     def patch(self, request, pk):
         item = self.get_object(pk)
         if item is None:
-            return Response(
-                {'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
         serializer = ItemSerializer(item, data=request.data, partial=True, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -185,9 +200,7 @@ class ItemDetailAPIView(APIView):
     def delete(self, request, pk):
         item = self.get_object(pk)
         if item is None:
-            return Response(
-                {'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
         item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -196,9 +209,7 @@ class MyItemsListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        items = Item.objects.select_related('category', 'owner').filter(
-            owner=request.user
-        )
+        items = Item.objects.select_related('category', 'owner').filter(owner=request.user)
         serializer = ItemSerializer(items, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -206,27 +217,40 @@ class MyItemsListAPIView(APIView):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def mark_resolved_view(request, pk):
-    try:
-        item = Item.objects.get(pk=pk)
-    except Item.DoesNotExist:
-        return Response(
-            {'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND
+    with transaction.atomic():
+        try:
+            item = Item.objects.select_for_update().select_related('owner').get(pk=pk)
+        except Item.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if item.owner != request.user:
+            return Response(
+                {'detail': 'You do not have permission to perform this action.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if item.status == Item.Status.RESOLVED:
+            return Response(
+                {'detail': 'Item is already resolved.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        item.status = Item.Status.RESOLVED
+        item.save(update_fields=['status', 'updated_at'])
+
+        # Reject any still-pending claims so the state is internally consistent.
+        Claim.objects.filter(item=item, status=Claim.Status.PENDING).update(
+            status=Claim.Status.REJECTED
         )
 
-    if item.owner != request.user:
-        return Response(
-            {'detail': 'You do not have permission to perform this action.'},
-            status=status.HTTP_403_FORBIDDEN,
-        )
-
-    item.status = Item.Status.RESOLVED
-    item.save(update_fields=['status', 'updated_at'])
     serializer = ItemSerializer(item, context={'request': request})
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ClaimCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'claim'
 
     def post(self, request):
         serializer = ClaimSerializer(data=request.data)
@@ -278,36 +302,52 @@ class MyItemClaimsListAPIView(APIView):
         )
         serializer = ClaimSerializer(claims, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def approve_claim(request, pk):
-    """Одобрить заявку (только владелец объявления)"""
-    try:
-        claim = Claim.objects.select_related('item', 'item__owner').get(pk=pk)
-    except Claim.DoesNotExist:
-        return Response(
-            {'detail': 'Claim not found.'},
-            status=status.HTTP_404_NOT_FOUND
-        )
+    """Approve a claim (only the item owner may do this)."""
+    with transaction.atomic():
+        try:
+            claim = (
+                Claim.objects.select_for_update()
+                .select_related('item', 'item__owner')
+                .get(pk=pk)
+            )
+        except Claim.DoesNotExist:
+            return Response(
+                {'detail': 'Claim not found.'}, status=status.HTTP_404_NOT_FOUND
+            )
 
-    if claim.item.owner != request.user:
-        return Response(
-            {'detail': 'You do not have permission to perform this action.'},
-            status=status.HTTP_403_FORBIDDEN
-        )
+        if claim.item.owner != request.user:
+            return Response(
+                {'detail': 'You do not have permission to perform this action.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
-    claim.status = Claim.Status.APPROVED
-    claim.save(update_fields=['status', 'updated_at'])
+        if claim.status != Claim.Status.PENDING:
+            return Response(
+                {'detail': 'Only pending claims can be approved.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-    Claim.objects.filter(
-        item=claim.item,
-        status=Claim.Status.PENDING,
-    ).exclude(pk=pk).update(status=Claim.Status.REJECTED)
+        if claim.item.status != Item.Status.ACTIVE:
+            return Response(
+                {'detail': 'Only active items can have a claim approved.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-    claim.item.status = Item.Status.CLAIMED
-    claim.item.save(update_fields=['status', 'updated_at'])
+        claim.status = Claim.Status.APPROVED
+        claim.save(update_fields=['status', 'updated_at'])
+
+        Claim.objects.filter(
+            item=claim.item,
+            status=Claim.Status.PENDING,
+        ).exclude(pk=pk).update(status=Claim.Status.REJECTED)
+
+        claim.item.status = Item.Status.CLAIMED
+        claim.item.save(update_fields=['status', 'updated_at'])
 
     serializer = ClaimSerializer(claim)
     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -316,23 +356,33 @@ def approve_claim(request, pk):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def reject_claim(request, pk):
-    """Отклонить заявку (только владелец объявления)"""
-    try:
-        claim = Claim.objects.select_related('item', 'item__owner').get(pk=pk)
-    except Claim.DoesNotExist:
-        return Response(
-            {'detail': 'Claim not found.'},
-            status=status.HTTP_404_NOT_FOUND
-        )
+    """Reject a claim (only the item owner may do this)."""
+    with transaction.atomic():
+        try:
+            claim = (
+                Claim.objects.select_for_update()
+                .select_related('item', 'item__owner')
+                .get(pk=pk)
+            )
+        except Claim.DoesNotExist:
+            return Response(
+                {'detail': 'Claim not found.'}, status=status.HTTP_404_NOT_FOUND
+            )
 
-    if claim.item.owner != request.user:
-        return Response(
-            {'detail': 'You do not have permission to perform this action.'},
-            status=status.HTTP_403_FORBIDDEN
-        )
+        if claim.item.owner != request.user:
+            return Response(
+                {'detail': 'You do not have permission to perform this action.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
-    claim.status = Claim.Status.REJECTED
-    claim.save(update_fields=['status', 'updated_at'])
+        if claim.status != Claim.Status.PENDING:
+            return Response(
+                {'detail': 'Only pending claims can be rejected.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        claim.status = Claim.Status.REJECTED
+        claim.save(update_fields=['status', 'updated_at'])
 
     serializer = ClaimSerializer(claim)
     return Response(serializer.data, status=status.HTTP_200_OK)

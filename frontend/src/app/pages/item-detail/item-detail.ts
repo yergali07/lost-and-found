@@ -15,6 +15,7 @@ import { User } from '../../models/auth.model';
   standalone: true,
   imports: [RouterLink, DatePipe, TitleCasePipe, FormsModule],
   templateUrl: './item-detail.html',
+  styleUrl: './item-detail.css',
 })
 export class ItemDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
@@ -28,11 +29,12 @@ export class ItemDetailComponent implements OnInit {
   protected readonly errorMessage = signal('');
   protected readonly loading = signal(true);
   protected readonly isLoggedIn = signal(false);
+  protected readonly hasPendingClaim = signal(false);
+
   claimMessage = '';
   claimSubmitting = false;
   claimSuccess = '';
   claimError = '';
-  hasPendingClaim = false;
 
   protected readonly isOwner = computed(
     () => this.item() !== null && this.me() !== null && this.item()!.owner === this.me()!.id,
@@ -60,8 +62,16 @@ export class ItemDetailComponent implements OnInit {
     });
 
     this.authService.getMe().subscribe({
-      next: (me) => {
-        this.me.set(me);
+      next: (me) => this.me.set(me),
+    });
+
+    this.claimService.getMyClaims().subscribe({
+      next: (claims) => {
+        const alreadyPending = claims.some((c) => c.item === id && c.status === 'pending');
+        if (alreadyPending) {
+          this.hasPendingClaim.set(true);
+          this.claimSuccess = 'You already have a pending claim for this item.';
+        }
       },
     });
   }
@@ -70,7 +80,7 @@ export class ItemDetailComponent implements OnInit {
     const item = this.item();
     const message = this.claimMessage.trim();
 
-    if (!item || !message || this.hasPendingClaim) {
+    if (!item || !message || this.hasPendingClaim()) {
       return;
     }
 
@@ -88,7 +98,7 @@ export class ItemDetailComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.hasPendingClaim = true;
+          this.hasPendingClaim.set(true);
           this.claimMessage = '';
           this.claimSuccess = 'Claim submitted successfully!';
         },
@@ -123,17 +133,15 @@ export class ItemDetailComponent implements OnInit {
 
     if (detail) {
       if (detail === 'You already have a pending claim for this item.') {
-        this.hasPendingClaim = true;
+        this.hasPendingClaim.set(true);
         this.claimSuccess = 'A claim has already been submitted and is pending review.';
         return '';
       }
-
       return detail;
     }
 
     if (error.error && typeof error.error === 'object') {
       const messages: string[] = [];
-
       for (const value of Object.values(error.error)) {
         if (Array.isArray(value)) {
           messages.push(...value.map(String));
@@ -141,7 +149,6 @@ export class ItemDetailComponent implements OnInit {
           messages.push(String(value));
         }
       }
-
       if (messages.length > 0) {
         return messages.join(' ');
       }

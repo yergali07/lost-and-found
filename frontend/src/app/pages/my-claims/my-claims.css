@@ -40,10 +40,22 @@
 }
 
 .claim-card {
+  display: block;
   border: 1px solid #e3e3e3;
   border-radius: 10px;
   padding: 12px;
   background: #fff;
+  text-decoration: none;
+  color: inherit;
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.claim-card:hover {
+  border-color: #1565c0;
+  transform: translateY(-1px);
+  text-decoration: none;
 }
 
 .claim-card__header {

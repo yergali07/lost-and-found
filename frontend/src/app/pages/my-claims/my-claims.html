@@ -15,7 +15,7 @@
   } @else {
     <div class="claims-list">
       @for (claim of claims(); track claim.id) {
-        <div class="claim-card">
+        <a [routerLink]="['/items', claim.item]" class="claim-card">
           <div class="claim-card__header">
             <strong class="claim-card__item">{{ claim.item_title }}</strong>
 
@@ -29,7 +29,7 @@
           </div>
 
           <p class="claim-card__message">{{ claim.message }}</p>
-        </div>
+        </a>
       }
     </div>
   }
